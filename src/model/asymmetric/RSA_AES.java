@@ -9,6 +9,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.interfaces.RSAPrivateKey;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -17,29 +18,53 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import model.CryptoAlgorithm;
+import model.ICryptoAlgorithm;
+import model.EKeySize;
 
-public class RSA_AES implements CryptoAlgorithm {
-	SecretKey secretKey;
+public class RSA_AES implements ICryptoAlgorithm {
 	KeyPair keyPair;
+	public SecretKey secretKey;
 	PublicKey publicKey;
-	PrivateKey privateKey;
+	public PrivateKey privateKey;
+	private EKeySize keySize;
+	
 	IvParameterSpec iv;
 	byte[] encryptedAESKey;
+
+	public RSA_AES(EKeySize keySize) {
+		this.keySize = keySize;
+	}
 
 	@Override
 	public void genKey() throws Exception {
 		KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-		generator.initialize(2048);
+		generator.initialize(this.keySize.getBits());
 		this.keyPair = generator.generateKeyPair();
 		this.publicKey = this.keyPair.getPublic();
 		this.privateKey = this.keyPair.getPrivate();
 
 		KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-		keyGen.init(128);// 128 bit (16 byte), 192 bit (24 byte), hoặc 256 bit (32 byte).
+
+		switch (this.keySize) {
+		case RSA_1024:
+			keyGen.init(128);
+			break;
+		case RSA_2048:
+			keyGen.init(256);
+			break;
+		case RSA_3072:
+			keyGen.init(256);
+			break;
+		case RSA_4096:
+			keyGen.init(256);
+			break;
+		default:
+			throw new IllegalArgumentException("Unsupported key size.");
+		}
+
 		this.secretKey = keyGen.generateKey();
 
-		this.iv = CryptoAlgorithm.generateIV();
+		this.iv = ICryptoAlgorithm.generateIV();
 
 		// Mã hóa khóa AES bằng RSA và lưu vào encryptedAESKey
 		Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
@@ -48,7 +73,7 @@ public class RSA_AES implements CryptoAlgorithm {
 	}
 
 	@Override
-	public void loadKey(Key key) throws Exception {
+	public void loadKey(Object key) throws Exception {
 		if (key instanceof PublicKey) {
 			this.publicKey = (PublicKey) key;
 		} else if (key instanceof PrivateKey) {
@@ -62,14 +87,18 @@ public class RSA_AES implements CryptoAlgorithm {
 
 	@Override
 	public byte[] encrypt(String text) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		byte[] plainBytes = text.getBytes("UTF-8");
+		Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		aesCipher.init(Cipher.ENCRYPT_MODE, this.secretKey, iv);
+		return aesCipher.doFinal(plainBytes);
 	}
 
 	@Override
 	public String decrypt(byte[] data) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		aesCipher.init(Cipher.DECRYPT_MODE, this.secretKey, iv);
+		byte[] decryptedBytes = aesCipher.doFinal(data);
+		return new String(decryptedBytes, "UTF-8");
 	}
 
 	@Override
@@ -94,6 +123,7 @@ public class RSA_AES implements CryptoAlgorithm {
 			cipherOut.flush();
 			return true;
 		} catch (Exception e) {
+			e.printStackTrace();
 			return false;
 		}
 	}
@@ -104,8 +134,20 @@ public class RSA_AES implements CryptoAlgorithm {
 		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFilePath));
 				BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(desFilePath))) {
 
-			// Đọc khóa AES đã mã hóa (256 byte đối với RSA 2048)
-			byte[] encryptedAESKey = new byte[256];
+			// Đọc khóa AES đã mã hóa:
+			// AES 128 - RSA 1024
+			// AES 256 - RSA 2048
+			// AES 384 - RSA 3072
+			// AES 512 - RSA 4096
+			int aesKeyByte = 128;
+			if (this.keySize == EKeySize.RSA_2048)
+				aesKeyByte = 256;
+			if (this.keySize == EKeySize.RSA_3072)
+				aesKeyByte = 384;
+			if (this.keySize == EKeySize.RSA_4096)
+				aesKeyByte = 512;
+
+			byte[] encryptedAESKey = new byte[aesKeyByte]; // Thay đổi kích thước
 			in.read(encryptedAESKey);
 
 			// Giải mã khóa AES bằng khóa private
@@ -138,39 +180,68 @@ public class RSA_AES implements CryptoAlgorithm {
 		}
 	}
 
+	@Override
+	public void setKeySize(EKeySize keySize) throws Exception {
+		this.setKeySize(keySize);
+	}
+
+	@Override
+	public boolean saveKeyToFile(String filePath) throws Exception {
+		ICryptoAlgorithm.savePrivateKey(filePath, privateKey);
+		return false;
+	}
+
+	@Override
+	public boolean loadKeyFromFile(String filePath) throws Exception {
+		this.privateKey = ICryptoAlgorithm.loadPrivateKey(filePath);
+		return true;
+	}
+
+	@Override
+	public int getKeySize() {
+		return ((RSAPrivateKey) privateKey).getModulus().bitLength();
+	}
+
 	public static void main(String[] args) {
 		try {
-			RSA_AES rsa_aes = new RSA_AES();
+			RSA_AES rsa_aes = new RSA_AES(EKeySize.RSA_3072);
 			rsa_aes.genKey();
 
-			String originalFilePath = "resources/input/originalFile.txt";
-			String encryptedFilePath = "resources/encrypt/encryptedFile.dat";
-			String decryptedFilePath = "resources/decrypt/decryptedFile.txt";
+			byte[] ciphertext = rsa_aes.encrypt("Pblues");
+			System.out.println(ICryptoAlgorithm.encryptBase64(ciphertext));
+			System.out.println(rsa_aes.decrypt(ciphertext));
 
-			 // Ghi nội dung mẫu vào file gốc
-            String content = "Đây là nội dung mẫu để kiểm tra mã hóa kết hợp RSA và AES.";
-            try (FileOutputStream fos = new FileOutputStream(originalFilePath)) {
-                fos.write(content.getBytes());
-            }
+//
+//			String originalFilePath = "resources/input/originalFile.txt";
+//			String encryptedFilePath = "resources/encrypt/encryptedFile.dat";
+//			String decryptedFilePath = "resources/decrypt/decryptedFile.txt";
+//
+//			// Ghi nội dung mẫu vào file gốc
+//			String content = "Đây là nội dung mẫu để kiểm tra mã hóa kết hợp RSA và AES.";
+//			try (FileOutputStream fos = new FileOutputStream(originalFilePath)) {
+//				fos.write(content.getBytes());
+//			}
+//
+//			// Mã hóa file gốc
+//			boolean isEncrypted = rsa_aes.encryptFile(originalFilePath, encryptedFilePath);
+//			if (isEncrypted) {
+//				System.out.println("Mã hóa thành công.");
+//			} else {
+//				System.out.println("Mã hóa thất bại.");
+//				return;
+//			}
+//
+//			// Giải mã file đã mã hóa
+//			boolean isDecrypted = rsa_aes.decryptFile(encryptedFilePath, decryptedFilePath);
+//			if (isDecrypted) {
+//				System.out.println("Giải mã thành công.");
+//			} else {
+//				System.out.println("Giải mã thất bại.");
+//				return;
+//			}
 
-            // Mã hóa file gốc
-            boolean isEncrypted = rsa_aes.encryptFile(originalFilePath, encryptedFilePath);
-            if (isEncrypted) {
-                System.out.println("Mã hóa thành công.");
-            } else {
-                System.out.println("Mã hóa thất bại.");
-                return;
-            }
-            
-         // Giải mã file đã mã hóa
-            boolean isDecrypted = rsa_aes.decryptFile(encryptedFilePath, decryptedFilePath);
-            if (isDecrypted) {
-                System.out.println("Giải mã thành công.");
-            } else {
-                System.out.println("Giải mã thất bại.");
-                return;
-            }
 		} catch (Exception e) {
+			e.printStackTrace();
 			System.out.println("Oops!");
 		}
 	}

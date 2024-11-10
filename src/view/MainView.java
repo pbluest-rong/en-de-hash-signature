@@ -1,62 +1,76 @@
 package view;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
-import java.awt.BorderLayout;
+
+import controller.Controller;
+
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
 
-import javax.swing.border.LineBorder;
-import java.awt.Color;
-
 public class MainView extends JFrame {
 	private JPanel contentPane;
-	private JPanel panelGenKey;
-	private JPanel panelSelectAlgorithms;
-	private JPanel panelEnDe;
-	private JPanel panelCheckFile;
+	private Controller controller;
 
 	/**
 	 * Create the frame.
 	 */
 	public MainView() {
-		panelGenKey = new PanelGenKey();
-		panelSelectAlgorithms = new PanelSelectAlgorithms();
-		panelEnDe = new PanelEnDe();
-		panelCheckFile = new PanelCheckFile();
-		
+		this.controller = new Controller();
+
 		setTitle("ATBMHTTT - Pblues");
 		try {
-            Image logo = ImageIO.read(new File("logo.png"));
-            setIconImage(logo);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+			Image logo = ImageIO.read(new File("logo.png"));
+			setIconImage(logo);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
 		setContentPane(contentPane);
-		setSize(800,600);
+		setSize(800, 700);
 		setLocationRelativeTo(null);
-		contentPane.setLayout(new GridLayout(2, 1));
-		
+		contentPane.setLayout(new BorderLayout());
+		JPanel panelMain = new JPanel(new GridLayout(2, 1));
+		contentPane.add(panelMain, BorderLayout.CENTER);
 
-		contentPane.add(panelSelectAlgorithms);
-		contentPane.add(panelGenKey);
-		contentPane.add(panelEnDe);
-		contentPane.add(panelCheckFile);
+		panelMain.add(this.controller.panelSelectAlgorithms);
+		panelMain.add(this.controller.panelGenLoadKey);
+		panelMain.add(this.controller.panelEnDe);
+		panelMain.add(this.controller.panelCheckFile);
+
+		JPanel progressPanel = new JPanel(new BorderLayout());
+		progressPanel.setVisible(true);
 		
+		JProgressBar progressBar = new JProgressBar();
+		progressBar.setIndeterminate(true);
+		progressBar.setString("Loading, please wait a few seconds 😊");
+		progressBar.setFont(progressBar.getFont().deriveFont(16f));
+		progressBar.setStringPainted(true);
+		progressBar.setVisible(false);
+
+		progressPanel.add(progressBar);
+		progressPanel.setPreferredSize(new Dimension(contentPane.getWidth(), 20));
+		contentPane.add(progressPanel, BorderLayout.NORTH);
+		this.controller.setProgressBar(progressBar);
+
 		this.setVisible(true);
 	}
-	
+
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
