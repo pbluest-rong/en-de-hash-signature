@@ -13,7 +13,7 @@ public enum EKeySize {
 	// bouncy castle
 	Twofish_128(128), Twofish_192(192), Twofish_256(256),
 
-	Serpent_128(128), Serpent_Twofish_192(192), Serpent_256(256),
+	Serpent_128(128), Serpent_192(192), Serpent_256(256),
 
 	CAST_40(40), CAST_128(128), CAST_256(256),
 

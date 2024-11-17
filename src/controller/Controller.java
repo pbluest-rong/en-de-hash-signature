@@ -46,7 +46,7 @@ public class Controller implements ActionListener {
 	private boolean isSelectBasic = false;
 	private boolean isSelectModern = false;
 	private boolean isSelectAsymmetric = false;
-
+	private boolean isSelectBouncyCastle = false;
 	private boolean isLoadHash = false;
 
 	public Controller() {
@@ -73,11 +73,12 @@ public class Controller implements ActionListener {
 		// select algorithms
 		if (e.getSource() == panelSelectAlgorithms.rdb_basic_symmetric
 				|| e.getSource() == panelSelectAlgorithms.rdb_modern_symmetric
+				|| e.getSource() == panelSelectAlgorithms.rdb_modern_symmetric_bouncy_castle
 				|| e.getSource() == panelSelectAlgorithms.rdb_asymmetric) {
 			switchLoadUI();
 		} else if (e.getSource() == panelSelectAlgorithms.cbb_algorithm) {
+			this.model.algorithm = null;
 			if (this.panelSelectAlgorithms.cbb_algorithm.getSelectedIndex() >= 0) {
-				System.out.println("cbb_algorithm :((");
 				SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
 					@Override
 					protected Void doInBackground() throws Exception {
@@ -89,21 +90,32 @@ public class Controller implements ActionListener {
 						if (ICryptoAlgorithm.isBasicSymmetric(model.algorithmType)) {
 							panelGenLoadKey.lbl_key_size.setVisible(false);
 							panelGenLoadKey.lbl_modes.setVisible(false);
-							panelGenLoadKey.lbl_padding.setVisible(false);
 							panelGenLoadKey.cbb_key_size.setVisible(false);
 							panelGenLoadKey.cbb_modes.setVisible(false);
 							panelGenLoadKey.cbb_padding.setVisible(false);
+							panelGenLoadKey.lbl_padding.setVisible(false);
 						} else {
-							panelGenLoadKey.lbl_key_size.setVisible(true);
-							panelGenLoadKey.lbl_modes.setVisible(true);
-							panelGenLoadKey.lbl_padding.setVisible(true);
-							panelGenLoadKey.cbb_key_size.setVisible(true);
-							panelGenLoadKey.cbb_modes.setVisible(true);
-							panelGenLoadKey.cbb_padding.setVisible(true);
+//							if (ICryptoAlgorithm.isBouncyCastleSymmetric(model.algorithmType)) {
+//								panelGenLoadKey.lbl_modes.setVisible(false);
+//								panelGenLoadKey.cbb_modes.setVisible(false);
+//								panelGenLoadKey.cbb_padding.setVisible(false);
+//								panelGenLoadKey.lbl_padding.setVisible(false);
+//								panelGenLoadKey.lbl_key_size.setVisible(true);
+//								panelGenLoadKey.cbb_key_size.setVisible(true);
+//								loadKeySize(model.algorithmType);
+//							} else {
+								panelGenLoadKey.lbl_key_size.setVisible(true);
+								panelGenLoadKey.lbl_modes.setVisible(true);
+								panelGenLoadKey.cbb_key_size.setVisible(true);
+								panelGenLoadKey.cbb_modes.setVisible(true);
+								panelGenLoadKey.cbb_padding.setVisible(true);
+								panelGenLoadKey.lbl_padding.setVisible(true);
 
-							loadKeySize(model.algorithmType);
-							loadModes(model.getModes());
-							loadPadding(model.getPaddings());
+								loadKeySize(model.algorithmType);
+								loadModes(model.getModes());
+//								if (panelGenLoadKey.cbb_modes.getItemCount() > 0)
+//									panelGenLoadKey.cbb_modes.setSelectedIndex(0);
+//							}
 						}
 						if (model.algorithmType != null) {
 							if (panelGenLoadKey.cbb_key_size.getItemCount() > 0)
@@ -127,59 +139,83 @@ public class Controller implements ActionListener {
 				int ks = Integer.valueOf(this.panelGenLoadKey.cbb_key_size.getSelectedItem().toString());
 				this.model.keySize = getKeySize(this.model.algorithmType, ks);
 			}
+		} else if (e.getSource() == panelGenLoadKey.cbb_modes) {
+			if (this.panelGenLoadKey.cbb_modes.getSelectedIndex() >= 0) {
+				String modeName = panelGenLoadKey.cbb_modes.getSelectedItem().toString();
+				this.model.mode = EModes.fromString(modeName);
+
+				if (this.model.algorithm != null) {
+					this.model.algorithm.setMode(this.model.mode);
+				}
+
+				if (model.algorithmType != null && model.mode != null)
+					loadPaddings(model.getPaddings());
+			}
+		} else if (e.getSource() == panelGenLoadKey.cbb_padding) {
+			if (this.panelGenLoadKey.cbb_padding.getSelectedIndex() >= 0) {
+				String paddingName = panelGenLoadKey.cbb_padding.getSelectedItem().toString();
+				this.model.padding = EPadding.fromString(paddingName);
+				if (this.model.algorithm != null) {
+					this.model.algorithm.setPadding(this.model.padding);
+				}
+			}
 		} else if (e.getSource() == panelGenLoadKey.btn_auto_key_genereration) {
 			if (this.model.algorithmType != null) {
 				if (ICryptoAlgorithm.isBasicSymmetric(this.model.algorithmType)) {
 					if (this.model.chooseAlgorithm()) {
 						System.out.println("chose basic symmetric");
 					}
+				} else if (ICryptoAlgorithm.isBouncyCastleSymmetric(this.model.algorithmType)) {
+					if (this.model.chooseAlgorithm()) {
+						System.out.println("chose modern bouncy castle symmetric");
+					}
 				} else {
 					if (this.model.chooseAlgorithm()) {
 						System.out.println("chose algorithm with key size");
 					}
 				}
-				if (this.model.algorithm != null && ICryptoAlgorithm.isFileEncryption(this.model.algorithmType)) {
-					if (panelGenLoadKey.rdo_save_key.isSelected()) {
-						fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-						JPanel accessoryPanel = new JPanel();
-						accessoryPanel.setLayout(new BorderLayout(10, 10));
-						JLabel label = new JLabel("New File Name:");
-						label.setFont(new Font("Aria", Font.BOLD, 20));
-						JTextField fileNameField = new JTextField(10);
-						fileNameField.setFont(new Font("Aria", Font.BOLD, 20));
-						accessoryPanel.add(label, BorderLayout.NORTH);
-						JPanel panel_in = new JPanel(new BorderLayout());
-						panel_in.add(fileNameField, BorderLayout.NORTH);
-						accessoryPanel.add(panel_in, BorderLayout.CENTER);
+				if (this.model.algorithm != null) {
+					if (ICryptoAlgorithm.isFileEncryption(this.model.algorithmType)) {
+						if (panelGenLoadKey.rdo_save_key.isSelected()) {
+							fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+							JPanel accessoryPanel = new JPanel();
+							accessoryPanel.setLayout(new BorderLayout(10, 10));
+							JLabel label = new JLabel("New File Name:");
+							label.setFont(new Font("Aria", Font.BOLD, 20));
+							JTextField fileNameField = new JTextField(10);
+							fileNameField.setFont(new Font("Aria", Font.BOLD, 20));
+							accessoryPanel.add(label, BorderLayout.NORTH);
+							JPanel panel_in = new JPanel(new BorderLayout());
+							panel_in.add(fileNameField, BorderLayout.NORTH);
+							accessoryPanel.add(panel_in, BorderLayout.CENTER);
 
-						fileChooser.setAccessory(accessoryPanel);
-						int returnVal = fileChooser.showDialog(this.panelGenLoadKey, "Select folder");
-						if (returnVal == JFileChooser.APPROVE_OPTION) {
-							File selectedFolder = fileChooser.getSelectedFile();
-							String folderPath = selectedFolder.getAbsolutePath();
-							String fileName = fileNameField.getText().trim();
-							if (!fileName.isEmpty()) {
-								String fullPath = folderPath + File.separator + fileName + ".data";
-								try {
-									if (this.model.algorithm != null) {
-										this.model.algorithm.genKey();
-										this.model.algorithm.saveKeyToFile(fullPath);
-										panelGenLoadKey.tf_file_path.setText(fullPath);
-										System.out.println("generated key!");
-										JOptionPane.showMessageDialog(panelGenLoadKey, "Generate key is successs!",
-												"Success", JOptionPane.INFORMATION_MESSAGE);
+							fileChooser.setAccessory(accessoryPanel);
+							int returnVal = fileChooser.showDialog(this.panelGenLoadKey, "Select folder");
+							if (returnVal == JFileChooser.APPROVE_OPTION) {
+								File selectedFolder = fileChooser.getSelectedFile();
+								String folderPath = selectedFolder.getAbsolutePath();
+								String fileName = fileNameField.getText().trim();
+								if (!fileName.isEmpty()) {
+									String fullPath = folderPath + File.separator + fileName + ".data";
+									try {
+										if (this.model.algorithm != null) {
+											this.model.algorithm.genKey();
+											this.model.algorithm.saveKeyToFile(fullPath);
+											panelGenLoadKey.tf_file_path.setText(fullPath);
+											System.out.println("generated key!");
+											JOptionPane.showMessageDialog(panelGenLoadKey, "Generate key is successs!",
+													"Success", JOptionPane.INFORMATION_MESSAGE);
+										}
+									} catch (Exception e1) {
+										e1.printStackTrace();
 									}
-								} catch (Exception e1) {
-									e1.printStackTrace();
+								} else {
+									JOptionPane.showMessageDialog(panelGenLoadKey, "File name is empty!", "Warning",
+											JOptionPane.WARNING_MESSAGE);
 								}
-							} else {
-								JOptionPane.showMessageDialog(panelGenLoadKey, "File name is empty!", "Warning",
-										JOptionPane.WARNING_MESSAGE);
 							}
-						}
-					} else {
-						if (this.model.algorithm != null) {
-							if (this.model.algorithm != null)
+						} else {
+							if (this.model.algorithm != null) {
 								try {
 									this.model.algorithm.genKey();
 									System.out.println("generated key!");
@@ -188,6 +224,7 @@ public class Controller implements ActionListener {
 								} catch (Exception e1) {
 									e1.printStackTrace();
 								}
+							}
 						}
 					}
 				}
@@ -543,6 +580,13 @@ public class Controller implements ActionListener {
 		}
 	}
 
+	private void loadBouncyCastleSymmetricAlgorithms() {
+		this.panelSelectAlgorithms.cbb_algorithm.removeAllItems();
+		for (EAlgorithmType type : this.model.modernBouncyCastleSymmetricAlgorithmTypes.keySet()) {
+			this.panelSelectAlgorithms.cbb_algorithm.addItem(type.getAlgorithm());
+		}
+	}
+
 	private void loadKeySize(EAlgorithmType type) {
 		this.panelGenLoadKey.cbb_key_size.removeAllItems();
 		if (ICryptoAlgorithm.isAsymmetricRSA(type) || ICryptoAlgorithm.isAsymmetricRSA_AES(type)) {
@@ -553,17 +597,22 @@ public class Controller implements ActionListener {
 			for (EKeySize ks : this.model.modernSymmetricAlgorithmTypes.get(type)) {
 				this.panelGenLoadKey.cbb_key_size.addItem(ks.getBits());
 			}
+		} else if (ICryptoAlgorithm.isBouncyCastleSymmetric(type)) {
+			for (EKeySize ks : this.model.modernBouncyCastleSymmetricAlgorithmTypes.get(type)) {
+				this.panelGenLoadKey.cbb_key_size.addItem(ks.getBits());
+			}
 		}
 	}
 
 	private void loadModes(List<EModes> modes) {
+		System.out.println(modes);
 		this.panelGenLoadKey.cbb_modes.removeAllItems();
 		for (EModes mode : modes) {
 			this.panelGenLoadKey.cbb_modes.addItem(mode.getModeName());
 		}
 	}
 
-	private void loadPadding(List<EPadding> paddings) {
+	private void loadPaddings(List<EPadding> paddings) {
 		this.panelGenLoadKey.cbb_padding.removeAllItems();
 		for (EPadding p : paddings) {
 			this.panelGenLoadKey.cbb_padding.addItem(p.getPaddingName());
@@ -583,6 +632,12 @@ public class Controller implements ActionListener {
 					return ks;
 				}
 			}
+		} else if (ICryptoAlgorithm.isBouncyCastleSymmetric(type)) {
+			for (EKeySize ks : this.model.modernBouncyCastleSymmetricAlgorithmTypes.get(type)) {
+				if (keySize == ks.getBits()) {
+					return ks;
+				}
+			}
 		}
 		return null;
 	}
@@ -591,8 +646,6 @@ public class Controller implements ActionListener {
 		SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
 			@Override
 			protected Void doInBackground() throws Exception {
-
-				System.out.println("switchLoadUI :((");
 				// Hiển thị progress bar trước khi bắt đầu công việc nặng
 				SwingUtilities.invokeLater(() -> progressBar.setVisible(true));
 
@@ -601,17 +654,27 @@ public class Controller implements ActionListener {
 					isSelectBasic = true;
 					isSelectModern = false;
 					isSelectAsymmetric = false;
+					isSelectBouncyCastle = false;
 					loadBasicSymmetricAlgorithms();
 				} else if (!isSelectModern && panelSelectAlgorithms.rdb_modern_symmetric.isSelected()) {
 					loadMordernSymmetricAlgorithms();
 					isSelectBasic = false;
 					isSelectModern = true;
 					isSelectAsymmetric = false;
+					isSelectBouncyCastle = false;
 				} else if (!isSelectAsymmetric && panelSelectAlgorithms.rdb_asymmetric.isSelected()) {
 					loadAsymmetricAlgorithms();
 					isSelectBasic = false;
 					isSelectModern = false;
 					isSelectAsymmetric = true;
+					isSelectBouncyCastle = false;
+				} else if (!isSelectBouncyCastle
+						&& panelSelectAlgorithms.rdb_modern_symmetric_bouncy_castle.isSelected()) {
+					loadBouncyCastleSymmetricAlgorithms();
+					isSelectBasic = false;
+					isSelectModern = false;
+					isSelectAsymmetric = false;
+					isSelectBouncyCastle = true;
 				}
 				return null;
 			}
@@ -626,7 +689,14 @@ public class Controller implements ActionListener {
 	}
 
 	private void resetUIForAlgorithm() {
-		if (ICryptoAlgorithm.isFileEncryption(this.model.algorithmType)) {
+		if (this.panelEnDe.rdo_text.isSelected()) {
+			this.panelGenLoadKey.lbl_fileKey.setVisible(false);
+			this.panelGenLoadKey.btn_open_file.setVisible(false);
+			this.panelGenLoadKey.tf_file_path.setVisible(false);
+			this.panelEnDe.btn_open_input_file.setVisible(false);
+			this.panelEnDe.btn_open_input_folder.setVisible(false);
+			this.panelEnDe.btn_open_output_file.setVisible(false);
+		} else if (ICryptoAlgorithm.isFileEncryption(this.model.algorithmType)) {
 			this.panelGenLoadKey.lbl_fileKey.setVisible(true);
 			this.panelGenLoadKey.btn_open_file.setVisible(true);
 			this.panelGenLoadKey.tf_file_path.setVisible(true);
@@ -636,16 +706,18 @@ public class Controller implements ActionListener {
 			this.panelEnDe.btn_open_input_file.setVisible(true);
 			this.panelEnDe.btn_open_input_folder.setVisible(true);
 			this.panelEnDe.btn_open_output_file.setVisible(true);
+			this.panelEnDe.tf_input.setText("");
+			this.panelEnDe.tf_output.setText("");
 		} else {
 			this.panelGenLoadKey.lbl_fileKey.setVisible(false);
 			this.panelGenLoadKey.btn_open_file.setVisible(false);
 			this.panelGenLoadKey.tf_file_path.setVisible(false);
-
-			this.panelEnDe.rdo_file.setVisible(false);
-			this.panelEnDe.rdo_text.setSelected(true);
 			this.panelEnDe.btn_open_input_file.setVisible(false);
 			this.panelEnDe.btn_open_input_folder.setVisible(false);
 			this.panelEnDe.btn_open_output_file.setVisible(false);
+
+			this.panelEnDe.rdo_file.setVisible(false);
+			this.panelEnDe.rdo_text.setSelected(true);
 		}
 	}
 

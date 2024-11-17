@@ -16,6 +16,8 @@ import javax.swing.border.EtchedBorder;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionListener;
+import java.awt.GridLayout;
+import javax.swing.JLabel;
 
 public class PanelSelectAlgorithms extends JPanel {
 	public ActionListener actionListener;
@@ -23,6 +25,7 @@ public class PanelSelectAlgorithms extends JPanel {
 	public JRadioButton rdb_basic_symmetric;
 	public JRadioButton rdb_modern_symmetric;
 	public JRadioButton rdb_asymmetric;
+	public JRadioButton rdb_modern_symmetric_bouncy_castle;
 
 	public PanelSelectAlgorithms(Controller controller) {
 		this.actionListener = controller;
@@ -41,24 +44,29 @@ public class PanelSelectAlgorithms extends JPanel {
 
 		JPanel panel = new JPanel();
 		add(panel, BorderLayout.NORTH);
-		panel.setLayout(new BorderLayout(0, 0));
+		panel.setLayout(new GridLayout(4, 1, 0, 0));
 
 		rdb_basic_symmetric = new JRadioButton("Basic Symmetric");
 		rdb_basic_symmetric.setFont(new Font("Tahoma", Font.BOLD, 18));
-		panel.add(rdb_basic_symmetric, BorderLayout.NORTH);
+		panel.add(rdb_basic_symmetric);
 
 		rdb_modern_symmetric = new JRadioButton("Modern Symmetric");
 		rdb_modern_symmetric.setFont(new Font("Tahoma", Font.BOLD, 18));
-		panel.add(rdb_modern_symmetric, BorderLayout.CENTER);
+		panel.add(rdb_modern_symmetric);
+
+		rdb_modern_symmetric_bouncy_castle = new JRadioButton("Bouncy Castle");
+		rdb_modern_symmetric_bouncy_castle.setFont(new Font("Tahoma", Font.BOLD, 18));
+		panel.add(rdb_modern_symmetric_bouncy_castle);
 
 		rdb_asymmetric = new JRadioButton("Asymmetric");
 		rdb_asymmetric.setFont(new Font("Tahoma", Font.BOLD, 18));
-		panel.add(rdb_asymmetric, BorderLayout.SOUTH);
+		panel.add(rdb_asymmetric);
 
 		ButtonGroup bg = new ButtonGroup();
 		bg.add(rdb_basic_symmetric);
 		bg.add(rdb_modern_symmetric);
 		bg.add(rdb_asymmetric);
+		bg.add(rdb_modern_symmetric_bouncy_castle);
 
 		JPanel panel_1 = new JPanel();
 		add(panel_1, BorderLayout.CENTER);
@@ -74,6 +82,7 @@ public class PanelSelectAlgorithms extends JPanel {
 		rdb_basic_symmetric.addActionListener(actionListener);
 		rdb_modern_symmetric.addActionListener(actionListener);
 		rdb_asymmetric.addActionListener(actionListener);
+		rdb_modern_symmetric_bouncy_castle.addActionListener(actionListener);
 		cbb_algorithm.addActionListener(actionListener);
 	}
 }

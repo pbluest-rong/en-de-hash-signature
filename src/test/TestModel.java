@@ -1,9 +1,11 @@
 package test;
 
 import java.util.Base64;
+import java.util.List;
 
 import model.EAlgorithmType;
 import model.EKeySize;
+import model.EModes;
 import model.ICryptoAlgorithm;
 import model.MainModel;
 import model.hash.CustomHashAlgorithm;
@@ -14,6 +16,7 @@ import model.hash.JavaHash;
 public class TestModel {
 	// Problems: Hill, BouncyCastleSymmetricEncryption
 	private MainModel model = new MainModel();
+
 	public static void main(String[] args) throws Exception {
 		TestModel tester = new TestModel();
 		String text = "Chào, tôi là Pblues!";
@@ -24,7 +27,7 @@ public class TestModel {
 
 		// 1. Test Algorithm with text
 //		tester.testBasicSymmetricAl(text);
-//		tester.testModernSymmetricAl(text);
+		tester.testModernSymmetricAl(text);
 //		tester.testAsymmetricAl(text);
 
 		// 2. Test Algorigm with file
@@ -34,11 +37,14 @@ public class TestModel {
 //				tester.testEncryption(src, en, de, type, null);
 //		}
 //
-//		for (EAlgorithmType type : tester.model.modernSymmetricAlgorithmTypes.keySet()) {
-//			for (EKeySize keySize : tester.model.modernSymmetricAlgorithmTypes.get(type))
-//				if (ICryptoAlgorithm.isFileEncryption(type))
-//					tester.testEncryption(src, en, de, type, keySize);
-//		}
+		for (EAlgorithmType type : tester.model.modernSymmetricAlgorithmTypes.keySet()) {
+			for (EKeySize keySize : tester.model.modernSymmetricAlgorithmTypes.get(type))
+				if (ICryptoAlgorithm.isFileEncryption(type))
+					for (EModes mode : EModes.getSupportedModes(type)) {
+						System.out.println(type.getAlgorithm() + " => " + keySize.getBits() + " => " + mode.getModeName());
+						tester.testEncryption(src, en, de, type, keySize, mode);
+					}
+		}
 //
 //		for (EAlgorithmType type : tester.model.asymmetricAlgorithmTypes.keySet()) {
 //			for (EKeySize keySize : tester.model.asymmetricAlgorithmTypes.get(type))
@@ -52,35 +58,39 @@ public class TestModel {
 
 	private void testBasicSymmetricAl(String text) throws Exception {
 		for (EAlgorithmType type : model.basicSymmetricAlgorithmTypes) {
-			testEncryption(text, type, null);
+			testEncryption(text, type, null, null);
 		}
 	}
 
 	private void testModernSymmetricAl(String text) throws Exception {
 		for (EAlgorithmType type : model.modernSymmetricAlgorithmTypes.keySet()) {
-			for (EKeySize keySize : model.modernSymmetricAlgorithmTypes.get(type))
-				testEncryption(text, type, keySize);
+			for (EKeySize keySize : model.modernSymmetricAlgorithmTypes.get(type)) {
+				for (EModes mode : EModes.getSupportedModes(type)) {
+					System.out.println(type.getAlgorithm() + " => " + keySize.getBits() + " => " + mode.getModeName());
+					testEncryption(text, type, keySize, mode);
+				}
+			}
 		}
 	}
 
 	private void testAsymmetricAl(String text) throws Exception {
 		for (EAlgorithmType type : model.asymmetricAlgorithmTypes.keySet()) {
 			for (EKeySize keySize : model.asymmetricAlgorithmTypes.get(type))
-				testEncryption(text, type, keySize);
+				testEncryption(text, type, keySize, null);
 		}
 	}
 
-	private void testEncryption(String text, EAlgorithmType algorithmType, EKeySize keySize) throws Exception {
+	private void testEncryption(String text, EAlgorithmType algorithmType, EKeySize keySize, EModes mode)
+			throws Exception {
 		model.algorithmType = algorithmType;
 		model.keySize = keySize;
+		model.mode = mode;
 		model.chooseAlgorithm();
 		if (model.algorithm != null) {
-			System.out.println("================> " + algorithmType + " - " + keySize);
 			model.algorithm.genKey();
 			byte[] out = this.model.algorithm.encrypt(text);
 			String ciphertext = Base64.getEncoder().encodeToString(out);
 			String plaintext = model.algorithm.decrypt(out);
-			System.out.print(model.algorithmType.getAlgorithm() + "\t key size: " + model.keySize + "\n");
 			System.out.println(ciphertext);
 			System.out.println(plaintext);
 		} else {
@@ -89,18 +99,17 @@ public class TestModel {
 	}
 
 	private void testEncryption(String srcFilePath, String enFilePath, String deFilePath, EAlgorithmType algorithmType,
-			EKeySize keySize) throws Exception {
+			EKeySize keySize, EModes mode) throws Exception {
 		model.algorithmType = algorithmType;
 		model.keySize = keySize;
+		model.mode = mode;
 		model.chooseAlgorithm();
 		if (model.algorithm != null) {
-			System.out.println("================> " + algorithmType + " - " + keySize);
 			model.algorithm.genKey();
 			this.model.algorithm.encryptFile(srcFilePath, enFilePath);
 			this.model.algorithm.decryptFile(enFilePath, deFilePath);
 			System.out.print(model.algorithmType.getAlgorithm() + "\t key size: " + model.keySize + " ---> "
 					+ checkSameFile(srcFilePath, deFilePath) + "\n");
-
 		} else {
 			System.out.println("Oops! Algorithm null.");
 		}

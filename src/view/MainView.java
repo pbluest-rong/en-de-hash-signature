@@ -1,6 +1,7 @@
 package view;
 
 import java.awt.BorderLayout;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -20,10 +21,13 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
+import javax.swing.JButton;
+import java.awt.Font;
 
 public class MainView extends JFrame {
 	private JPanel contentPane;
 	private Controller controller;
+	public JButton btn_signature;
 
 	/**
 	 * Create the frame.
@@ -46,6 +50,7 @@ public class MainView extends JFrame {
 		setLocationRelativeTo(null);
 		contentPane.setLayout(new BorderLayout());
 		JPanel panelMain = new JPanel(new GridLayout(2, 1));
+		panelMain.setBorder(new EmptyBorder(0, 0, 5, 0));
 		contentPane.add(panelMain, BorderLayout.CENTER);
 
 		panelMain.add(this.controller.panelSelectAlgorithms);
@@ -55,7 +60,7 @@ public class MainView extends JFrame {
 
 		JPanel progressPanel = new JPanel(new BorderLayout());
 		progressPanel.setVisible(true);
-		
+
 		JProgressBar progressBar = new JProgressBar();
 		progressBar.setIndeterminate(true);
 		progressBar.setString("Loading, please wait a few seconds 😊");
@@ -68,6 +73,25 @@ public class MainView extends JFrame {
 		contentPane.add(progressPanel, BorderLayout.NORTH);
 		this.controller.setProgressBar(progressBar);
 
+		btn_signature = new JButton("Signature");
+		btn_signature.setFont(new Font("Tahoma", Font.BOLD, 12));
+		btn_signature.addActionListener(e -> {
+			EventQueue.invokeLater(new Runnable() {
+				public void run() {
+					try {
+						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+						JFrame frame = new JFrame("Signature Application");
+						frame.setSize(800, 700);
+						frame.setLocationRelativeTo(null);
+						frame.add(new PanelSignature());
+						frame.setVisible(true);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
+		});
+		contentPane.add(btn_signature, BorderLayout.SOUTH);
 		this.setVisible(true);
 	}
 

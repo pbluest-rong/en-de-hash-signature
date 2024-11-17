@@ -1,15 +1,23 @@
 package model.modern_symmetric;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.engines.*;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.modes.CFBBlockCipher;
+import org.bouncycastle.crypto.modes.OFBBlockCipher;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
+import org.bouncycastle.crypto.paddings.ISO10126d2Padding;
+import org.bouncycastle.crypto.paddings.PKCS7Padding;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
+import org.bouncycastle.crypto.paddings.ZeroBytePadding;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.util.encoders.Base64;
 
 import model.EAlgorithmType;
 import model.EKeySize;
+import model.EModes;
+import model.EPadding;
 import model.ICryptoAlgorithm;
 
 import java.io.FileOutputStream;
@@ -23,11 +31,21 @@ public class BouncyCastleSymmetricEncryption implements ICryptoAlgorithm {
 	private SecureRandom secureRandom = new SecureRandom();
 	private EKeySize keySize;
 	private EAlgorithmType algorithmType;
+	private EModes mode;
+	private EPadding padding;
 	private byte[] key;
 
-	public BouncyCastleSymmetricEncryption(EAlgorithmType algorithmType, EKeySize keySize) {
+//	public BouncyCastleSymmetricEncryption(EAlgorithmType algorithmType, EKeySize keySize) {
+//		this.algorithmType = algorithmType;
+//		this.keySize = keySize;
+//	}
+
+	public BouncyCastleSymmetricEncryption(EAlgorithmType algorithmType, EKeySize keySize, EModes mode,
+			EPadding padding) {
 		this.algorithmType = algorithmType;
 		this.keySize = keySize;
+		this.mode = mode;
+		this.padding = padding;
 	}
 
 	// Mã hóa dữ liệu
@@ -44,42 +62,100 @@ public class BouncyCastleSymmetricEncryption implements ICryptoAlgorithm {
 		return new String(decryptedData, StandardCharsets.UTF_8);
 	}
 
-	// Mã hóa dữ liệu với thuật toán Bouncy Castle
 	private byte[] encryptData(byte[] data) throws Exception {
-		org.bouncycastle.crypto.BlockCipher cipher = getCipherInstance();
-		byte[] iv = new byte[ICryptoAlgorithm.BLOCK_SIZE];
-		secureRandom.nextBytes(iv);
-		PaddedBufferedBlockCipher cipherInstance = new PaddedBufferedBlockCipher(new CBCBlockCipher(cipher));
-		cipherInstance.init(true, new ParametersWithIV(new KeyParameter(key), iv));
+		org.bouncycastle.crypto.BlockCipher baseCipher = getCipherInstance();
+		BlockCipher blockCipher = wrapCipherWithMode(baseCipher);
+		PaddedBufferedBlockCipher cipher = wrapCipherWithPadding(blockCipher);
 
-		byte[] output = new byte[cipherInstance.getOutputSize(data.length)];
-		int outputLength = cipherInstance.processBytes(data, 0, data.length, output, 0);
-		cipherInstance.doFinal(output, outputLength);
+		// Tạo IV nếu cần thiết
+		byte[] iv = null;
+		if (EAlgorithmType.requiresIV(mode, algorithmType)) {
+			int blocksize = this.algorithmType.getIvLength();
+			iv = new byte[blocksize];
+			secureRandom.nextBytes(iv);
+			cipher.init(true, new ParametersWithIV(new KeyParameter(key), iv));
+		} else {
+			cipher.init(true, new KeyParameter(key));
+		}
 
-		byte[] result = new byte[iv.length + output.length];
-		System.arraycopy(iv, 0, result, 0, iv.length);
-		System.arraycopy(output, 0, result, iv.length, output.length);
-		return result; // trả về kết quả mã hóa
-	}
+		// Mã hóa dữ liệu
+		byte[] output = new byte[cipher.getOutputSize(data.length)];
+		int outputLength = cipher.processBytes(data, 0, data.length, output, 0);
+		cipher.doFinal(output, outputLength);
 
-	// Giải mã dữ liệu với thuật toán Bouncy Castle
-	private byte[] decryptData(byte[] data) throws Exception {
-		byte[] iv = new byte[ICryptoAlgorithm.BLOCK_SIZE];
-		System.arraycopy(data, 0, iv, 0, iv.length);
-		byte[] ciphertext = new byte[data.length - iv.length];
-		System.arraycopy(data, iv.length, ciphertext, 0, ciphertext.length);
-
-		org.bouncycastle.crypto.BlockCipher cipher = getCipherInstance();
-		PaddedBufferedBlockCipher cipherInstance = new PaddedBufferedBlockCipher(new CBCBlockCipher(cipher));
-		cipherInstance.init(false, new ParametersWithIV(new KeyParameter(key), iv));
-
-		byte[] output = new byte[cipherInstance.getOutputSize(ciphertext.length)];
-		int outputLength = cipherInstance.processBytes(ciphertext, 0, ciphertext.length, output, 0);
-		cipherInstance.doFinal(output, outputLength);
+		// Nếu IV được dùng, gắn vào đầu ciphertext
+		if (iv != null) {
+			byte[] result = new byte[iv.length + output.length];
+			System.arraycopy(iv, 0, result, 0, iv.length);
+			System.arraycopy(output, 0, result, iv.length, output.length);
+			return result;
+		}
 		return output;
 	}
 
-	// Chọn cipher phù hợp với thuật toán
+	private byte[] decryptData(byte[] data) throws Exception {
+	    org.bouncycastle.crypto.BlockCipher baseCipher = getCipherInstance();
+	    BlockCipher blockCipher = wrapCipherWithMode(baseCipher);
+	    PaddedBufferedBlockCipher cipher = wrapCipherWithPadding(blockCipher);
+
+	    byte[] iv = null;
+	    byte[] ciphertext = null;
+
+	    if (EAlgorithmType.requiresIV(mode, algorithmType)) {
+	        int blocksize = this.algorithmType.getIvLength();
+	        iv = new byte[blocksize];
+	        System.arraycopy(data, 0, iv, 0, iv.length);
+
+	        // Tách ciphertext từ data
+	        ciphertext = new byte[data.length - iv.length];
+	        System.arraycopy(data, iv.length, ciphertext, 0, ciphertext.length);
+
+	        cipher.init(false, new ParametersWithIV(new KeyParameter(key), iv));
+	    } else {
+	        cipher.init(false, new KeyParameter(key));
+	        ciphertext = data;
+	    }
+
+	    // Giải mã ciphertext
+	    byte[] output = new byte[cipher.getOutputSize(ciphertext.length)];
+	    int outputLength = cipher.processBytes(ciphertext, 0, ciphertext.length, output, 0);
+	    cipher.doFinal(output, outputLength);
+
+	    return output;
+	}
+
+
+	private BlockCipher wrapCipherWithMode(org.bouncycastle.crypto.BlockCipher cipher) throws Exception {
+		int blockSize = cipher.getBlockSize() * 8;
+		switch (mode) {
+		case CBC:
+			return new CBCBlockCipher(cipher);
+		case ECB:
+			return cipher;
+		case CFB:
+			return new CFBBlockCipher(cipher, blockSize);
+		case OFB:
+			return new OFBBlockCipher(cipher, blockSize);
+		case CTR:
+			return new SICBlockCipher(cipher);
+		default:
+			throw new Exception("Unsupported mode.");
+		}
+	}
+
+	private PaddedBufferedBlockCipher wrapCipherWithPadding(BlockCipher cipher) throws Exception {
+		switch (padding) {
+		case PKCS7Padding:
+			return new PaddedBufferedBlockCipher(cipher, new PKCS7Padding());
+		case ZeroPadding:
+			return new PaddedBufferedBlockCipher(cipher, new ZeroBytePadding());
+		case ISO10126Padding:
+			return new PaddedBufferedBlockCipher(cipher, new ISO10126d2Padding());
+		default:
+			throw new Exception("Unsupported padding.");
+		}
+	}
+
 	private org.bouncycastle.crypto.BlockCipher getCipherInstance() throws Exception {
 		switch (algorithmType) {
 		case Twofish:
@@ -91,30 +167,78 @@ public class BouncyCastleSymmetricEncryption implements ICryptoAlgorithm {
 		case Camellia:
 			return new CamelliaEngine();
 		default:
-			throw new Exception("Thuật toán không hỗ trợ.");
+			throw new Exception("Unsupported algorithm.");
 		}
 	}
 
 	@Override
 	public boolean encryptFile(String srcFilePath, String desFilePath) throws Exception {
+		// Read the source file
+		byte[] fileData = Files.readAllBytes(Paths.get(srcFilePath));
 
-		return false;
+		// Get the cipher instance and initialize it
+		org.bouncycastle.crypto.BlockCipher cipher = getCipherInstance();
+		int blocksize = this.algorithmType.getIvLength();
+		byte[] iv = new byte[blocksize];
+		secureRandom.nextBytes(iv);
+		PaddedBufferedBlockCipher cipherInstance = new PaddedBufferedBlockCipher(new CBCBlockCipher(cipher));
+		cipherInstance.init(true, new ParametersWithIV(new KeyParameter(key), iv));
+
+		// Encrypt the file data
+		byte[] output = new byte[cipherInstance.getOutputSize(fileData.length)];
+		int outputLength = cipherInstance.processBytes(fileData, 0, fileData.length, output, 0);
+		cipherInstance.doFinal(output, outputLength);
+
+		// Combine the IV and the encrypted data
+		byte[] result = new byte[iv.length + output.length];
+		System.arraycopy(iv, 0, result, 0, iv.length);
+		System.arraycopy(output, 0, result, iv.length, output.length);
+
+		// Write the result (IV + encrypted data) to the output file
+		try (FileOutputStream fos = new FileOutputStream(desFilePath)) {
+			fos.write(result);
+			return true;
+		} catch (IOException e) {
+			throw new Exception("Error writing encrypted data to file: " + e.getMessage(), e);
+		}
 	}
 
 	@Override
 	public boolean decryptFile(String srcFilePath, String desFilePath) throws Exception {
+		// Read the encrypted file
+		byte[] encryptedData = Files.readAllBytes(Paths.get(srcFilePath));
 
-		return false;
+		// Extract the IV from the beginning of the encrypted data
+		int blocksize = this.algorithmType.getIvLength();
+		byte[] iv = new byte[blocksize];
+		System.arraycopy(encryptedData, 0, iv, 0, iv.length);
+
+		// The remaining data is the ciphertext
+		byte[] ciphertext = new byte[encryptedData.length - iv.length];
+		System.arraycopy(encryptedData, iv.length, ciphertext, 0, ciphertext.length);
+
+		// Get the cipher instance and initialize it for decryption
+		org.bouncycastle.crypto.BlockCipher cipher = getCipherInstance();
+		PaddedBufferedBlockCipher cipherInstance = new PaddedBufferedBlockCipher(new CBCBlockCipher(cipher));
+		cipherInstance.init(false, new ParametersWithIV(new KeyParameter(key), iv));
+
+		// Decrypt the ciphertext
+		byte[] decryptedData = new byte[cipherInstance.getOutputSize(ciphertext.length)];
+		int outputLength = cipherInstance.processBytes(ciphertext, 0, ciphertext.length, decryptedData, 0);
+		cipherInstance.doFinal(decryptedData, outputLength);
+
+		// Write the decrypted data to the output file
+		try (FileOutputStream fos = new FileOutputStream(desFilePath)) {
+			fos.write(decryptedData);
+			return true;
+		} catch (IOException e) {
+			throw new Exception("Error writing decrypted data to file: " + e.getMessage(), e);
+		}
 	}
 
 	@Override
 	public int getKeySize() {
-		return keySize.getBits();
-	}
-
-	@Override
-	public void setKeySize(EKeySize keySize) throws Exception {
-		this.keySize = keySize;
+		return key.length * 8;
 	}
 
 	@Override
@@ -128,60 +252,91 @@ public class BouncyCastleSymmetricEncryption implements ICryptoAlgorithm {
 		if (keyObj instanceof byte[]) {
 			key = (byte[]) keyObj;
 		} else {
-			throw new Exception("Khóa không hợp lệ");
+			throw new Exception("Invalid key format.");
 		}
 	}
 
 	@Override
 	public boolean saveKeyToFile(String filePath) throws Exception {
 		try {
-			byte[] keyData = key;
-
-			Files.write(Paths.get(filePath), keyData);
+			Files.write(Paths.get(filePath), key);
 			return true;
 		} catch (IOException e) {
-			throw new Exception("Lỗi khi lưu khóa vào tệp: " + e.getMessage(), e);
+			throw new Exception("Error saving key to file: " + e.getMessage(), e);
 		}
 	}
 
 	@Override
 	public boolean loadKeyFromFile(String filePath) throws Exception {
 		try {
-			byte[] keyData = Files.readAllBytes(Paths.get(filePath));
-
-			key = keyData;
-
+			key = Files.readAllBytes(Paths.get(filePath));
 			return true;
 		} catch (IOException e) {
-			throw new Exception("Lỗi khi tải khóa từ tệp: " + e.getMessage(), e);
+			throw new Exception("Error loading key from file: " + e.getMessage(), e);
 		}
+	}
+
+	@Override
+	public String info() {
+		return "Algorithm: " + algorithmType.getAlgorithm() + ", Mode: " + mode.getModeName() + ", Padding: "
+				+ padding.getPaddingName() + ", Key size: " + getKeySize() + " bits";
+	}
+
+	@Override
+	public boolean setMode(EModes mode) {
+		if (EModes.getSupportedModes(this.algorithmType).contains(mode)) {
+			this.mode = mode;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean setPadding(EPadding padding) {
+		if (EPadding.getSupportedPadding(algorithmType, mode).contains(padding)) {
+			this.padding = padding;
+			return true;
+		}
+		return false;
 	}
 
 	public static void main(String[] args) {
 		try {
 			// Khởi tạo đối tượng BouncyCastleSymmetricEncryption với thuật toán và kích
 			// thước khóa
-			BouncyCastleSymmetricEncryption encryption = new BouncyCastleSymmetricEncryption(EAlgorithmType.CAST,
-					EKeySize.CAST_128);
+			EAlgorithmType[] types = new EAlgorithmType[] { EAlgorithmType.Twofish, EAlgorithmType.Serpent,
+					EAlgorithmType.CAST, EAlgorithmType.Camellia };
+			EModes[] modes = new EModes[] {
+					EModes.ECB, EModes.CBC, EModes.CFB, EModes.OFB,
+					EModes.CTR 
+			};
+			EPadding[] paddings = new EPadding[] { EPadding.PKCS7Padding, EPadding.ISO10126Padding,
+					EPadding.ZeroPadding };
 
-			// Tạo khóa
-			encryption.genKey();
-
-			// Mã hóa một chuỗi văn bản
 			String plainText = "Đây là văn bản thử nghiệm!";
 			System.out.println("Văn bản gốc: " + plainText);
-			byte[] encryptedData = encryption.encrypt(plainText);
-			System.out
-					.println("Dữ liệu mã hóa (Base64): " + java.util.Base64.getEncoder().encodeToString(encryptedData));
 
-			// Giải mã chuỗi dữ liệu
-			String decryptedText = encryption.decrypt(encryptedData);
-			System.out.println("Dữ liệu giải mã: " + decryptedText);
+			for (EAlgorithmType type : types)
+				for (EModes mode : modes)
+					for (EPadding p : paddings) {
+						BouncyCastleSymmetricEncryption encryption = new BouncyCastleSymmetricEncryption(type,
+								EKeySize.CAST_128, mode, p);
+						System.out.println("===========> " + encryption.algorithmType + " - " + encryption.mode + " - "
+								+ encryption.padding);
+						encryption.genKey();
+						try {
+							byte[] encryptedData = encryption.encrypt(plainText);
+							String decryptedText = encryption.decrypt(encryptedData);
 
-			// Kiểm tra mã hóa và giải mã tệp
-			String srcFilePath = "test.txt"; // Đảm bảo bạn có tệp này trong thư mục làm việc
-			String encryptedFilePath = "test_encrypted.txt";
-			String decryptedFilePath = "test_decrypted.txt";
+							System.out.println("Dữ liệu mã hóa (Base64): "
+									+ java.util.Base64.getEncoder().encodeToString(encryptedData));
+							System.out.println("Dữ liệu giải mã: " + decryptedText);
+
+						} catch (Exception e) {
+							System.out.println("\u001B[31m" + "ERROR " + e.getMessage() + "\u001B[0m");
+						}
+						System.out.println("===============================\n");
+					}
 
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -13,7 +13,10 @@ import java.security.interfaces.RSAPrivateKey;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 
+import model.EAlgorithmType;
 import model.EKeySize;
+import model.EModes;
+import model.EPadding;
 import model.ICryptoAlgorithm;
 
 public class RSA implements ICryptoAlgorithm {
@@ -21,14 +24,13 @@ public class RSA implements ICryptoAlgorithm {
 	PublicKey publicKey;
 	PrivateKey privateKey;
 	private EKeySize keySize;
+	private EModes mode;
+	private EPadding padding;
 
-	public RSA(EKeySize keySize) {
+	public RSA(EKeySize keySize, EModes mode, EPadding padding) {
 		this.keySize = keySize;
-	}
-
-	@Override
-	public void setKeySize(EKeySize keySize) throws Exception {
-		this.setKeySize(keySize);
+		this.mode = mode;
+		this.padding = padding;
 	}
 
 	@Override
@@ -53,14 +55,14 @@ public class RSA implements ICryptoAlgorithm {
 
 	@Override
 	public byte[] encrypt(String text) throws Exception {
-		Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+		Cipher cipher = Cipher.getInstance(EAlgorithmType.RSA.getCipherInstanceString(mode, padding));
 		cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 		return cipher.doFinal(text.getBytes());
 	}
 
 	@Override
 	public String decrypt(byte[] data) throws Exception {
-		Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+		Cipher cipher = Cipher.getInstance(EAlgorithmType.RSA.getCipherInstanceString(mode, padding));
 		cipher.init(Cipher.DECRYPT_MODE, privateKey);
 		return new String(cipher.doFinal(data), StandardCharsets.UTF_8);
 	}
@@ -90,5 +92,31 @@ public class RSA implements ICryptoAlgorithm {
 	@Override
 	public int getKeySize() {
 		return ((RSAPrivateKey) privateKey).getModulus().bitLength();
+	}
+
+	@Override
+	public String info() {
+		boolean publicK = publicKey != null;
+		boolean privateK = privateKey != null;
+		return "Public Key: " + publicK + "\n" + "Private Key: " + publicK + "\n" + "Key Size: " + keySize + "\n"
+				+ "Mode: " + mode + "\n";
+	}
+
+	@Override
+	public boolean setMode(EModes mode) {
+		if (EModes.getSupportedModes(EAlgorithmType.RSA).contains(mode)) {
+			this.mode = mode;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean setPadding(EPadding padding) {
+		if (EPadding.getSupportedPadding(EAlgorithmType.RSA, mode).contains(padding)) {
+			this.padding = padding;
+			return true;
+		}
+		return false;
 	}
 }

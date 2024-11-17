@@ -9,6 +9,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
 
 import javax.crypto.Cipher;
@@ -19,7 +20,10 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 import model.ICryptoAlgorithm;
+import model.EAlgorithmType;
 import model.EKeySize;
+import model.EModes;
+import model.EPadding;
 
 public class RSA_AES implements ICryptoAlgorithm {
 	KeyPair keyPair;
@@ -27,12 +31,17 @@ public class RSA_AES implements ICryptoAlgorithm {
 	PublicKey publicKey;
 	public PrivateKey privateKey;
 	private EKeySize keySize;
-	
+
 	IvParameterSpec iv;
 	byte[] encryptedAESKey;
 
-	public RSA_AES(EKeySize keySize) {
+	private EModes mode;
+	private EPadding padding;
+
+	public RSA_AES(EKeySize keySize, EModes mode, EPadding padding) {
 		this.keySize = keySize;
+		this.mode = mode;
+		this.padding = padding;
 	}
 
 	@Override
@@ -63,11 +72,12 @@ public class RSA_AES implements ICryptoAlgorithm {
 		}
 
 		this.secretKey = keyGen.generateKey();
-
-		this.iv = ICryptoAlgorithm.generateIV();
+		byte[] iv = new byte[16];
+		new SecureRandom().nextBytes(iv);
+		this.iv = new IvParameterSpec(iv);
 
 		// Mã hóa khóa AES bằng RSA và lưu vào encryptedAESKey
-		Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+		Cipher cipher = Cipher.getInstance(EAlgorithmType.RSA.getCipherInstanceString(mode, padding));
 		cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 		this.encryptedAESKey = cipher.doFinal(secretKey.getEncoded());
 	}
@@ -88,14 +98,14 @@ public class RSA_AES implements ICryptoAlgorithm {
 	@Override
 	public byte[] encrypt(String text) throws Exception {
 		byte[] plainBytes = text.getBytes("UTF-8");
-		Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		Cipher aesCipher = Cipher.getInstance(EAlgorithmType.AES.getCipherInstanceString(mode, padding));
 		aesCipher.init(Cipher.ENCRYPT_MODE, this.secretKey, iv);
 		return aesCipher.doFinal(plainBytes);
 	}
 
 	@Override
 	public String decrypt(byte[] data) throws Exception {
-		Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		Cipher aesCipher = Cipher.getInstance(EAlgorithmType.AES.getCipherInstanceString(mode, padding));
 		aesCipher.init(Cipher.DECRYPT_MODE, this.secretKey, iv);
 		byte[] decryptedBytes = aesCipher.doFinal(data);
 		return new String(decryptedBytes, "UTF-8");
@@ -104,7 +114,7 @@ public class RSA_AES implements ICryptoAlgorithm {
 	@Override
 	public boolean encryptFile(String srcFilePath, String desFilePath) throws Exception {
 		// encrypt secretkey
-		Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		Cipher aesCipher = Cipher.getInstance(EAlgorithmType.AES.getCipherInstanceString(mode, padding));
 		aesCipher.init(Cipher.ENCRYPT_MODE, this.secretKey, iv);
 
 		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFilePath));
@@ -151,7 +161,7 @@ public class RSA_AES implements ICryptoAlgorithm {
 			in.read(encryptedAESKey);
 
 			// Giải mã khóa AES bằng khóa private
-			Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+			Cipher rsaCipher = Cipher.getInstance(EAlgorithmType.RSA.getCipherInstanceString(mode, padding));
 			rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
 			byte[] aesKeyBytes = rsaCipher.doFinal(encryptedAESKey);
 			this.secretKey = new javax.crypto.spec.SecretKeySpec(aesKeyBytes, "AES");
@@ -162,7 +172,7 @@ public class RSA_AES implements ICryptoAlgorithm {
 			this.iv = new IvParameterSpec(ivBytes);
 
 			// Giải mã nội dung file với khóa AES
-			Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+			Cipher aesCipher = Cipher.getInstance(EAlgorithmType.AES.getCipherInstanceString(mode, padding));
 			aesCipher.init(Cipher.DECRYPT_MODE, this.secretKey, iv);
 
 			try (CipherInputStream cipherIn = new CipherInputStream(in, aesCipher)) {
@@ -178,11 +188,6 @@ public class RSA_AES implements ICryptoAlgorithm {
 			e.printStackTrace();
 			return false;
 		}
-	}
-
-	@Override
-	public void setKeySize(EKeySize keySize) throws Exception {
-		this.setKeySize(keySize);
 	}
 
 	@Override
@@ -202,47 +207,29 @@ public class RSA_AES implements ICryptoAlgorithm {
 		return ((RSAPrivateKey) privateKey).getModulus().bitLength();
 	}
 
-	public static void main(String[] args) {
-		try {
-			RSA_AES rsa_aes = new RSA_AES(EKeySize.RSA_3072);
-			rsa_aes.genKey();
+	@Override
+	public String info() {
+		boolean publicK = publicKey != null;
+		boolean privateK = privateKey != null;
+		return "Public Key: " + publicK + "\n" + "Private Key: " + privateK + "\n" + "Key Size: " + keySize + "\n"
+				+ "Mode: " + mode + "\n";
+	}
 
-			byte[] ciphertext = rsa_aes.encrypt("Pblues");
-			System.out.println(ICryptoAlgorithm.encryptBase64(ciphertext));
-			System.out.println(rsa_aes.decrypt(ciphertext));
-
-//
-//			String originalFilePath = "resources/input/originalFile.txt";
-//			String encryptedFilePath = "resources/encrypt/encryptedFile.dat";
-//			String decryptedFilePath = "resources/decrypt/decryptedFile.txt";
-//
-//			// Ghi nội dung mẫu vào file gốc
-//			String content = "Đây là nội dung mẫu để kiểm tra mã hóa kết hợp RSA và AES.";
-//			try (FileOutputStream fos = new FileOutputStream(originalFilePath)) {
-//				fos.write(content.getBytes());
-//			}
-//
-//			// Mã hóa file gốc
-//			boolean isEncrypted = rsa_aes.encryptFile(originalFilePath, encryptedFilePath);
-//			if (isEncrypted) {
-//				System.out.println("Mã hóa thành công.");
-//			} else {
-//				System.out.println("Mã hóa thất bại.");
-//				return;
-//			}
-//
-//			// Giải mã file đã mã hóa
-//			boolean isDecrypted = rsa_aes.decryptFile(encryptedFilePath, decryptedFilePath);
-//			if (isDecrypted) {
-//				System.out.println("Giải mã thành công.");
-//			} else {
-//				System.out.println("Giải mã thất bại.");
-//				return;
-//			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("Oops!");
+	@Override
+	public boolean setMode(EModes mode) {
+		if (EModes.getSupportedModes(EAlgorithmType.RSA_AES).contains(mode)) {
+			this.mode = mode;
+			return true;
 		}
+		return false;
+	}
+
+	@Override
+	public boolean setPadding(EPadding padding) {
+		if (EPadding.getSupportedPadding(EAlgorithmType.RSA_AES, mode).contains(padding)) {
+			this.padding = padding;
+			return true;
+		}
+		return false;
 	}
 }

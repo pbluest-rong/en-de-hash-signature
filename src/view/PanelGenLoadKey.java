@@ -32,9 +32,9 @@ public class PanelGenLoadKey extends JPanel {
 	public JLabel lbl_modes;
 	public JComboBox cbb_modes;
 	private JPanel panel_6;
+	public JLabel lbl_key_size;
 	public JLabel lbl_padding;
 	public JComboBox cbb_padding;
-	public JLabel lbl_key_size;
 
 	public PanelGenLoadKey(Controller controller) {
 		this.actionListener = controller;
@@ -107,30 +107,30 @@ public class PanelGenLoadKey extends JPanel {
 		ButtonGroup bg = new ButtonGroup();
 		bg.add(rdo_not_save_key);
 		bg.add(rdo_save_key);
-		
+
 		panel_4 = new JPanel();
 		panel_north.add(panel_4, BorderLayout.NORTH);
 		panel_4.setLayout(new BorderLayout(0, 0));
-		
+
 		panel_5 = new JPanel();
 		panel_5.setBorder(new EmptyBorder(5, 0, 5, 0));
 		panel_4.add(panel_5, BorderLayout.NORTH);
 		panel_5.setLayout(new BorderLayout(0, 0));
-		
+
 		lbl_modes = new JLabel("Modes:    ");
 		lbl_modes.setFont(new Font("Tahoma", Font.BOLD, 12));
 		panel_5.add(lbl_modes, BorderLayout.WEST);
-		
+
 		cbb_modes = new JComboBox();
 		cbb_modes.setFont(new Font("Tahoma", Font.BOLD, 20));
 		panel_5.add(cbb_modes, BorderLayout.CENTER);
-		
+
 		panel_6 = new JPanel();
 		panel_6.setBorder(new EmptyBorder(0, 0, 5, 0));
 		panel_4.add(panel_6, BorderLayout.SOUTH);
 		panel_6.setLayout(new BorderLayout(0, 0));
 		
-		lbl_padding = new JLabel("Padding: ");
+		lbl_padding = new JLabel("Padding:   ");
 		lbl_padding.setFont(new Font("Tahoma", Font.BOLD, 12));
 		panel_6.add(lbl_padding, BorderLayout.WEST);
 		
@@ -143,6 +143,8 @@ public class PanelGenLoadKey extends JPanel {
 		this.cbb_key_size.addActionListener(actionListener);
 		this.btn_auto_key_genereration.addActionListener(actionListener);
 		this.btn_open_file.addActionListener(actionListener);
+		this.cbb_modes.addActionListener(actionListener);
+		this.cbb_padding.addActionListener(actionListener);
 	}
 
 }

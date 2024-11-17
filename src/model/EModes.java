@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public enum EModes {
-	ECB("ECB"), CBC("CBC"), CFB("CFB"), OFB("OFB"), CTR("CTR"), GCM("GCM");
+	ECB("ECB"), CBC("CBC"), CFB("CFB"), OFB("OFB"), CTR("CTR");
 
 	private final String modeName;
 
@@ -16,6 +16,15 @@ public enum EModes {
 		return modeName;
 	}
 
+	public static EModes fromString(String modeName) {
+		for (EModes mode : EModes.values()) {
+			if (mode.getModeName().equalsIgnoreCase(modeName)) {
+				return mode;
+			}
+		}
+		return null;
+	}
+
 	public static List<EModes> getSupportedModes(EAlgorithmType algorithmType) {
 		switch (algorithmType) {
 		case AES:
@@ -23,8 +32,11 @@ public enum EModes {
 		case TripleDES:
 		case Blowfish:
 		case Twofish:
+		case Serpent:
 		case Camellia:
-			return Arrays.asList(ECB, CBC, CFB, OFB, CTR, GCM);
+			return Arrays.asList(ECB, CBC, CFB, OFB, CTR);
+		case CAST:
+			return Arrays.asList(ECB, CBC, CFB, OFB);
 		case RC4:
 		case ChaCha20:
 			return Arrays.asList(ECB, CTR);

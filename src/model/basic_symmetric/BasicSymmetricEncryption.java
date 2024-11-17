@@ -15,6 +15,8 @@ import org.bouncycastle.jcajce.provider.asymmetric.ec.GMSignatureSpi.sha256WithS
 
 import model.EAlgorithmType;
 import model.EKeySize;
+import model.EModes;
+import model.EPadding;
 import model.ICryptoAlgorithm;
 
 /**
@@ -62,11 +64,11 @@ public class BasicSymmetricEncryption implements ICryptoAlgorithm {
 	@Override
 	public void genKey() throws Exception {
 		SecureRandom random = new SecureRandom();
-	    StringBuilder keyBuilder = new StringBuilder();
-	    for (int i = 0; i < 16; i++) {
-	        keyBuilder.append((char) ('a' + random.nextInt(26)));
-	    }
-	    basicSymmetric.key = keyBuilder.toString();
+		StringBuilder keyBuilder = new StringBuilder();
+		for (int i = 0; i < 16; i++) {
+			keyBuilder.append((char) ('a' + random.nextInt(26)));
+		}
+		basicSymmetric.key = keyBuilder.toString();
 	}
 
 	@Override
@@ -128,10 +130,6 @@ public class BasicSymmetricEncryption implements ICryptoAlgorithm {
 	}
 
 	@Override
-	public void setKeySize(EKeySize keySize) {
-	}
-
-	@Override
 	public boolean saveKeyToFile(String filePath) throws Exception {
 		return false;
 	}
@@ -166,11 +164,29 @@ public class BasicSymmetricEncryption implements ICryptoAlgorithm {
 			System.out.println("Decrypted Text: " + decryptedText);
 			System.out.println();
 
-			shiftCipher.encryptFile("resources/input/text_input.txt","resources/input/text_output.txt");
-			shiftCipher.decryptFile("resources/input/text_output.txt","resources/input/text_output_de.txt");
-			
+			shiftCipher.encryptFile("resources/input/text_input.txt", "resources/input/text_output.txt");
+			shiftCipher.decryptFile("resources/input/text_output.txt", "resources/input/text_output_de.txt");
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public String info() {
+		return "Cipher Config: " + (this.basicSymmetric.config != null);
+
+	}
+
+	@Override
+	public boolean setMode(EModes mode) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean setPadding(EPadding padding) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

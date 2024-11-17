@@ -18,10 +18,19 @@ import java.util.Base64;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
+import org.bouncycastle.crypto.engines.CAST5Engine;
+import org.bouncycastle.crypto.engines.CamelliaEngine;
+import org.bouncycastle.crypto.engines.SerpentEngine;
+import org.bouncycastle.crypto.engines.TwofishEngine;
+
 import model.asymmetric.RSA_AES;
 
 public interface ICryptoAlgorithm {
-	public static final int BLOCK_SIZE = 16;
+	public static IvParameterSpec generateIV(int ivBytesLength) {
+		byte[] ivBytes = new byte[ivBytesLength];
+		new SecureRandom().nextBytes(ivBytes);
+		return new IvParameterSpec(ivBytes);
+	}
 
 	public static String encryptBase64(byte[] text) {
 		return Base64.getEncoder().encodeToString(text);
@@ -31,12 +40,6 @@ public interface ICryptoAlgorithm {
 		return new String(Base64.getDecoder().decode(text), StandardCharsets.UTF_8);
 	}
 
-	public static IvParameterSpec generateIV() {
-		byte[] iv = new byte[BLOCK_SIZE];
-		new SecureRandom().nextBytes(iv);
-		return new IvParameterSpec(iv);
-	}
-	
 	public static void savePrivateKey(String privateKeyPath, PrivateKey privateKey) throws Exception {
 		try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(privateKeyPath))) {
 			oos.writeObject(privateKey);
@@ -67,6 +70,13 @@ public interface ICryptoAlgorithm {
 		if (type.getAlgorithm().equals("Shift Cipher") || type.getAlgorithm().equals("Substitution Cipher")
 				|| type.getAlgorithm().equals("Affine") || type.getAlgorithm().equals("Vingenere Cipher")
 				|| type.getAlgorithm().equals("Hill Cipher") || type.getAlgorithm().equals("Permutation Cipher"))
+			return true;
+		return false;
+	}
+
+	public static boolean isBouncyCastleSymmetric(EAlgorithmType type) {
+		if (type.getAlgorithm().equals("Twofish") || type.getAlgorithm().equals("Serpent")
+				|| type.getAlgorithm().equals("CAST") || type.getAlgorithm().equals("Camellia"))
 			return true;
 		return false;
 	}
@@ -104,8 +114,6 @@ public interface ICryptoAlgorithm {
 	}
 
 	int getKeySize();
-
-	void setKeySize(EKeySize keySize) throws Exception;
 
 	void genKey() throws Exception;
 
@@ -174,4 +182,10 @@ public interface ICryptoAlgorithm {
 		}
 		return true;
 	}
+
+	public boolean setMode(EModes mode);
+
+	public boolean setPadding(EPadding padding);
+
+	public String info();
 }

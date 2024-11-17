@@ -19,25 +19,23 @@ public enum EAlgorithmType {
 	public String getAlgorithm() {
 		return algorithm;
 	}
-	
-	public String getCipherInstanceString() {
+
+	public String getCipherInstanceString(EModes mode, EPadding padding) {
 		switch (this) {
 		case AES:
-			return "AES/CBC/PKCS5Padding"; // AES với CBC và PKCS5Padding
+			return "AES/" + mode.getModeName() + "/" + padding.getPaddingName();
 		case DES:
-			return "DES/CBC/PKCS5Padding"; // DES với CBC và PKCS5Padding
+			return "DES/" + mode.getModeName() + "/" + padding.getPaddingName();
 		case TripleDES:
-			return "DESede/CBC/PKCS5Padding"; // TripleDES (DESede) với CBC và PKCS5Padding
+			return "DESede/" + mode.getModeName() + "/" + padding.getPaddingName();
 		case Blowfish:
-			return "Blowfish/CBC/PKCS5Padding"; // Blowfish với CBC và PKCS5Padding
+			return "Blowfish/" + mode.getModeName() + "/" + padding.getPaddingName();
 		case RC4:
-			return "RC4"; // RC4 không cần padding
+			return "RC4";
 		case ChaCha20:
-			return "ChaCha20"; // ChaCha20 không cần padding
-		case Twofish:
-			return "Twofish/CBC/PKCS5Padding"; // Twofish với CBC và PKCS5Padding
+			return "ChaCha20";
 		case RSA:
-			return "RSA/ECB/PKCS1Padding"; // RSA với ECB và PKCS1Padding
+			return "RSA/" + mode.getModeName() + "/" + padding.getPaddingName();
 		default:
 			return this.getAlgorithm();
 		}
@@ -51,4 +49,45 @@ public enum EAlgorithmType {
 		}
 		return null;
 	}
+
+	public Integer getIvLength() {
+		switch (this) {
+		case AES:
+		case Twofish:
+		case Serpent:
+		case Camellia:
+			return 16; // AES, Twofish, Camellia đều sử dụng IV dài 16 byte (128 bit)
+		case DES:
+		case TripleDES:
+		case Blowfish:
+		case CAST:
+			return 8; // DES, TripleDES, Blowfish, CAST đều sử dụng IV dài 8 byte (64 bit)
+		case ChaCha20:
+			return 12; // ChaCha20 sử dụng IV dài 12 byte (96 bit)
+		case RC4:
+			return null; // RC4 không yêu cầu IV (Stream Cipher)
+		case RSA:
+		case RSA_AES:
+			return null; // RSA không yêu cầu IV
+		default:
+			return null; // Mặc định trả về 0 nếu không có IV
+		}
+	}
+
+	public static boolean requiresIV(EModes mode, EAlgorithmType algorithmType) {
+		if (algorithmType == EAlgorithmType.RC4)
+			return false;
+		switch (mode) {
+		case ECB:
+		case CFB:
+		case OFB:
+			return false;
+		case CBC:
+		case CTR:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 }

@@ -22,6 +22,8 @@ import javax.crypto.spec.IvParameterSpec;
 import model.EAlgorithmType;
 import model.ICryptoAlgorithm;
 import model.EKeySize;
+import model.EModes;
+import model.EPadding;
 
 /**
  * @author Ba Phung Le Mã hóa đối xứng hiện đại - Xử lý với các giải thuật java
@@ -33,15 +35,17 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 	public SecretKey key;
 	private EKeySize keySize;
 	private EAlgorithmType algorithmType;
+	private EModes mode;
+	private EPadding padding;
+	private IvParameterSpec iv;
 
-	public ModernSymmetricEncryption(EAlgorithmType algorithmType, EKeySize keySize) {
+	public ModernSymmetricEncryption(EAlgorithmType algorithmType, EKeySize keySize, EModes mode, EPadding padding) {
 		this.keySize = keySize;
 		this.algorithmType = algorithmType;
-	}
-
-	@Override
-	public void setKeySize(EKeySize keySize) throws Exception {
-		this.setKeySize(keySize);
+		this.mode = mode;
+		this.padding = padding;
+		Integer ivBytes = this.algorithmType.getIvLength();
+		this.iv = ivBytes == null ? null : ICryptoAlgorithm.generateIV(ivBytes);
 	}
 
 	@Override
@@ -68,17 +72,7 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 	@Override
 	public byte[] encrypt(String text) throws Exception {
 		byte[] data = text.getBytes(StandardCharsets.UTF_8);
-		/**
-		 * Padding:
-		 * + PKCS5Padding: phổ biến nhất, kích thước của khối là 8 byte (64 bits)
-		 * + PKCS7Padding: tương tự nhưng áp dụng cho bất kỳ kích thước khối nào
-		 * + NoPadding:: chỉ nên dùng nếu bạn chắc chắn rằng dữ liệu đầu vào đã có kích thước phù hợp
-		 * + ISO10126Padding: không phổ biến, các byte đệm có giá trị ngẫu nhiên, ngoại từ byte cuối cùng 
-		 * + ZeroPadding: Đệm thêm các byte có giá trị 0x00 cho đến khi đủ khối cuối.,Phù hợp với dữ liệu chuỗi
-		 * + ISO7816-4Padding: Thêm một byte 0x80 và sau đó là các byte 0x00 cho đến hết khối.
-		 * + ISO10126Padding
-		 */
-		Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString());
+		Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString(mode, padding));
 		if (ICryptoAlgorithm.isSymmetricChaCha(this.algorithmType)) {
 			byte[] ivBytes = new byte[12];
 			SecureRandom random = new SecureRandom();
@@ -93,14 +87,19 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 			System.arraycopy(ivBytes, 0, result, 0, ivBytes.length);
 			System.arraycopy(encryptedData, 0, result, ivBytes.length, encryptedData.length);
 			return result;
-		} else
-			cipher.init(Cipher.ENCRYPT_MODE, this.key);
+		} else {
+			if (EAlgorithmType.requiresIV(mode, algorithmType) && iv != null)
+				cipher.init(Cipher.ENCRYPT_MODE, this.key, iv);
+			else
+				cipher.init(Cipher.ENCRYPT_MODE, this.key);
+
+		}
 		return cipher.doFinal(data);
 	}
 
 	@Override
 	public String decrypt(byte[] data) throws Exception {
-		Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString());
+		Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString(mode, padding));
 		if (ICryptoAlgorithm.isSymmetricChaCha(this.algorithmType)) {
 			// Tách IV từ dữ liệu đầu vào
 			byte[] ivBytes = new byte[12];
@@ -113,29 +112,57 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 
 			cipher.init(Cipher.DECRYPT_MODE, this.key, iv);
 			return new String(cipher.doFinal(encryptedData), StandardCharsets.UTF_8);
-		} else
-			cipher.init(Cipher.DECRYPT_MODE, this.key);
+		} else {
+			if (EAlgorithmType.requiresIV(mode, algorithmType) && iv != null)
+				cipher.init(Cipher.DECRYPT_MODE, this.key, iv);
+			else
+				cipher.init(Cipher.DECRYPT_MODE, this.key);
+		}
 		return new String(cipher.doFinal(data), StandardCharsets.UTF_8);
 	}
 
 	@Override
 	public boolean encryptFile(String srcFilePath, String desFilePath) throws Exception {
+		Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString(mode, padding));
+
 		if (ICryptoAlgorithm.isSymmetricChaCha(algorithmType)) {
 			return chachaEncryptFile(srcFilePath, desFilePath);
 		} else {
-			Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString());
-			cipher.init(Cipher.ENCRYPT_MODE, this.key);
+			// Tạo IV mới nếu cần
+			if (EAlgorithmType.requiresIV(mode, algorithmType)) {
+				if (iv == null && algorithmType.getIvLength() != null)
+					iv = ICryptoAlgorithm.generateIV(algorithmType.getIvLength());
 
-			try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFilePath));
-					BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(desFilePath));
-					CipherInputStream cipherIn = new CipherInputStream(in, cipher)) {
+				cipher.init(Cipher.ENCRYPT_MODE, this.key, iv);
 
-				byte[] buffer = new byte[1024];
-				int bytesRead;
-				while ((bytesRead = cipherIn.read(buffer)) != -1) {
-					out.write(buffer, 0, bytesRead);
+				try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFilePath));
+						BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(desFilePath))) {
+
+					// Lưu IV vào đầu tệp
+					out.write(iv.getIV());
+
+					try (CipherInputStream cipherIn = new CipherInputStream(in, cipher)) {
+						byte[] buffer = new byte[1024];
+						int bytesRead;
+						while ((bytesRead = cipherIn.read(buffer)) != -1) {
+							out.write(buffer, 0, bytesRead);
+						}
+						out.flush();
+					}
 				}
-				out.flush();
+			} else {
+				cipher.init(Cipher.ENCRYPT_MODE, this.key);
+				try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFilePath));
+						BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(desFilePath));
+						CipherInputStream cipherIn = new CipherInputStream(in, cipher)) {
+
+					byte[] buffer = new byte[1024];
+					int bytesRead;
+					while ((bytesRead = cipherIn.read(buffer)) != -1) {
+						out.write(buffer, 0, bytesRead);
+					}
+					out.flush();
+				}
 			}
 			return true;
 		}
@@ -143,25 +170,45 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 
 	@Override
 	public boolean decryptFile(String srcFilePath, String desFilePath) throws Exception {
+		Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString(mode, padding));
+
 		if (ICryptoAlgorithm.isSymmetricChaCha(algorithmType)) {
 			return chachaDecryptFile(srcFilePath, desFilePath);
 		} else {
-			Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString());
-			cipher.init(Cipher.DECRYPT_MODE, this.key);
-
 			try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFilePath));
-					BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(desFilePath));
-					CipherInputStream cipherIn = new CipherInputStream(in, cipher)) {
+					BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(desFilePath))) {
+				if (EAlgorithmType.requiresIV(mode, algorithmType)) {
+					// Đọc IV từ đầu tệp
+					byte[] ivBytes = new byte[algorithmType.getIvLength()];
+					in.read(ivBytes); // Đọc IV
+					IvParameterSpec iv = new IvParameterSpec(ivBytes);
 
-				byte[] buffer = new byte[1024];
-				int bytesRead;
-				while ((bytesRead = cipherIn.read(buffer)) != -1) {
-					out.write(buffer, 0, bytesRead);
+					// Khởi tạo cipher với IV đọc từ tệp
+					cipher.init(Cipher.DECRYPT_MODE, this.key, iv);
+
+					try (CipherInputStream cipherIn = new CipherInputStream(in, cipher)) {
+						byte[] buffer = new byte[1024];
+						int bytesRead;
+						while ((bytesRead = cipherIn.read(buffer)) != -1) {
+							out.write(buffer, 0, bytesRead);
+						}
+						out.flush();
+					}
+				} else {
+					cipher.init(Cipher.DECRYPT_MODE, this.key);
+					CipherInputStream cipherIn = new CipherInputStream(in, cipher);
+
+					byte[] buffer = new byte[1024];
+					int bytesRead;
+					while ((bytesRead = cipherIn.read(buffer)) != -1) {
+						out.write(buffer, 0, bytesRead);
+					}
+					out.flush();
 				}
-				out.flush();
 			}
 			return true;
 		}
+
 	}
 
 	public boolean chachaEncryptFile(String srcFilePath, String desFilePath) throws Exception {
@@ -171,7 +218,7 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 		random.nextBytes(ivBytes);
 		ChaCha20ParameterSpec iv = new ChaCha20ParameterSpec(ivBytes, 0);
 
-		Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString());
+		Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString(mode, padding));
 		cipher.init(Cipher.ENCRYPT_MODE, this.key, iv);
 
 		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFilePath));
@@ -197,7 +244,7 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 			in.read(ivBytes);
 			ChaCha20ParameterSpec iv = new ChaCha20ParameterSpec(ivBytes, 0);
 
-			Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString());
+			Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString(mode, padding));
 			cipher.init(Cipher.DECRYPT_MODE, this.key, iv);
 
 			try (CipherInputStream de = new CipherInputStream(in, cipher)) {
@@ -219,7 +266,7 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 
 	@Override
 	public boolean loadKeyFromFile(String filePath) throws Exception {
-		this.key = ICryptoAlgorithm.loadSecretKey(filePath);
+		key = ICryptoAlgorithm.loadSecretKey(filePath);
 		return true;
 	}
 
@@ -228,17 +275,46 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 		return key.getEncoded().length * 8;
 	}
 
+	@Override
+	public String info() {
+		return "Secret Key: " + this.key + "\n" + "Key Size: " + keySize + "\n" + "Mode: " + mode + "\n" + "IV"
+				+ (iv != null);
+	}
+
+	@Override
+	public boolean setMode(EModes mode) {
+		if (EModes.getSupportedModes(this.algorithmType).contains(mode)) {
+			this.mode = mode;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean setPadding(EPadding padding) {
+		if (EPadding.getSupportedPadding(algorithmType, mode).contains(padding)) {
+			this.padding = padding;
+			return true;
+		}
+		return false;
+	}
+
 	public static void main(String[] args) throws Exception {
 		String srcFilePath = "resources/input/image_input.jpg";
 		String desFilePathEn = "resources/encrypt/image_output.jpg";
+		String key = "resources/key.data";
 		String desFilePathDe = "resources/decrypt/image_output.jpg";
 
-		ModernSymmetricEncryption modernSymmetric = new ModernSymmetricEncryption(EAlgorithmType.RC4, EKeySize.AES_256);
+		ModernSymmetricEncryption modernSymmetric = new ModernSymmetricEncryption(EAlgorithmType.AES, EKeySize.AES_256,
+				EModes.CBC, EPadding.getSupportedPadding(EAlgorithmType.AES, EModes.CBC).get(0));
 		modernSymmetric.genKey();
 		byte[] ciphertext = modernSymmetric.encrypt("Pblues");
 		System.out.println(ICryptoAlgorithm.encryptBase64(ciphertext));
 		System.out.println(modernSymmetric.decrypt(ciphertext));
 //		modernSymmetric.encryptFile(srcFilePath, desFilePathEn);
+//		modernSymmetric.saveKeyToFile(key);
+//
+//		modernSymmetric.loadKeyFromFile(key);
 //		modernSymmetric.decryptFile(desFilePathEn, desFilePathDe);
 	}
 

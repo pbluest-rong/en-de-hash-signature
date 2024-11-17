@@ -1,47 +1,70 @@
 package model;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 public enum EPadding {
-    NO_PADDING("NoPadding"),
-    PKCS1_PADDING("PKCS1Padding"),
-    OAEP_PADDING("OAEPPadding"),
-    PKCS5_PADDING("PKCS5Padding"),
-    PKCS7_PADDING("PKCS7Padding"),
-    ISO_IEC_7816_4("ISO7816-4Padding"),
-    //
-    ZERO_PADDING("ZeroPadding"),
-    ANSI_X_923("ANSIX923Padding");
+	// Java hỗ trợ
+	PKCS5Padding("PKCS5Padding"), PKCS1Padding("PKCS1Padding"), NoPadding("NoPadding"),
+	ISO10126Padding("ISO10126Padding"),
+	// Java không hỗ trợ
+	PKCS7Padding("PKCS7Padding"), ZeroPadding("ZeroBytePadding");
 
-    private final String paddingName;
+	private final String paddingName;
 
-    EPadding(String paddingName) {
-        this.paddingName = paddingName;
-    }
+	EPadding(String paddingName) {
+		this.paddingName = paddingName;
+	}
 
-    public String getPaddingName() {
-        return paddingName;
-    }
+	public String getPaddingName() {
+		return paddingName;
+	}
 
-    public static List<EPadding> getSupportedPadding(EAlgorithmType algorithmType) {
-        switch (algorithmType) {
-        case AES:
-        case DES:
-        case TripleDES:
-        case Blowfish:
-        case Twofish:
-        case Serpent:
-        case Camellia:
-            return Arrays.asList(PKCS5_PADDING, PKCS7_PADDING, ISO_IEC_7816_4, ZERO_PADDING, ANSI_X_923, NO_PADDING);
-        case RSA:
-        case RSA_AES:
-            return Arrays.asList(PKCS1_PADDING, OAEP_PADDING);
-        case RC4:
-        case ChaCha20:
-            return Arrays.asList(NO_PADDING);
-        default:
-            return Arrays.asList(NO_PADDING);
-        }
-    }
+	public static EPadding fromString(String paddingName) {
+		for (EPadding padding : EPadding.values()) {
+			if (padding.getPaddingName().equalsIgnoreCase(paddingName)) {
+				return padding;
+			}
+		}
+		throw new IllegalArgumentException("Unsupported padding: " + paddingName);
+	}
+
+	public static List<EPadding> getSupportedPadding(EAlgorithmType algorithmType, EModes mode) {
+		List<EPadding> paddings = new ArrayList<>();
+
+		if (algorithmType == EAlgorithmType.RC4 || algorithmType == EAlgorithmType.ChaCha20) {
+			return paddings;
+		}
+
+		switch (algorithmType) {
+		case AES:
+		case DES:
+		case TripleDES:
+		case Blowfish:
+			if (mode == EModes.CTR) {
+				paddings.add(EPadding.NoPadding);
+			} else if (mode == EModes.ECB || mode == EModes.CBC || mode == EModes.CFB || mode == EModes.OFB) {
+				paddings.add(EPadding.PKCS5Padding);
+				paddings.add(EPadding.ISO10126Padding);
+			}
+			break;
+		case Twofish:
+		case Serpent:
+		case CAST:
+		case Camellia:
+			paddings.add(PKCS7Padding);
+			paddings.add(ISO10126Padding);
+			paddings.add(ZeroPadding);
+			break;
+		case RSA:
+		case RSA_AES:
+			paddings.add(EPadding.PKCS1Padding);
+			break;
+
+		default:
+			break;
+		}
+		return paddings;
+	}
+
 }

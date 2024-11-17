@@ -17,6 +17,7 @@ import model.hash.CustomHashAlgorithm;
 import model.hash.EHashAlgorithm;
 import model.hash.IHash;
 import model.hash.JavaHash;
+import model.modern_symmetric.BouncyCastleSymmetricEncryption;
 import model.modern_symmetric.ModernSymmetricEncryption;
 
 public class MainModel {
@@ -30,6 +31,7 @@ public class MainModel {
 
 	public List<EAlgorithmType> basicSymmetricAlgorithmTypes;
 	public Map<EAlgorithmType, List<EKeySize>> modernSymmetricAlgorithmTypes;
+	public Map<EAlgorithmType, List<EKeySize>> modernBouncyCastleSymmetricAlgorithmTypes;
 	public Map<EAlgorithmType, List<EKeySize>> asymmetricAlgorithmTypes;
 	public List<EHashAlgorithm> hashAlgorithms;
 
@@ -37,7 +39,8 @@ public class MainModel {
 		this.asymmetricAlgorithmTypes = new LinkedHashMap<EAlgorithmType, List<EKeySize>>();
 		this.modernSymmetricAlgorithmTypes = new LinkedHashMap<EAlgorithmType, List<EKeySize>>();
 		this.basicSymmetricAlgorithmTypes = new ArrayList<EAlgorithmType>();
-
+		this.modernBouncyCastleSymmetricAlgorithmTypes = new LinkedHashMap<EAlgorithmType, List<EKeySize>>();
+		// java
 		List<EKeySize> des = new ArrayList<>(Arrays.asList(EKeySize.DES_56));
 		List<EKeySize> tripleDes = new ArrayList<>(Arrays.asList(EKeySize.TripleDES_168));
 		List<EKeySize> aes = new ArrayList<>(Arrays.asList(EKeySize.AES_128, EKeySize.AES_192, EKeySize.AES_256));
@@ -47,17 +50,27 @@ public class MainModel {
 		List<EKeySize> chacha20 = new ArrayList<>(Arrays.asList(EKeySize.ChaCha20_256));
 		List<EKeySize> rsa = new ArrayList<>(
 				Arrays.asList(EKeySize.RSA_1024, EKeySize.RSA_2048, EKeySize.RSA_3072, EKeySize.RSA_4096));
-
+		// modern
 		this.modernSymmetricAlgorithmTypes.put(EAlgorithmType.DES, des);
 		this.modernSymmetricAlgorithmTypes.put(EAlgorithmType.TripleDES, tripleDes);
 		this.modernSymmetricAlgorithmTypes.put(EAlgorithmType.AES, aes);
 		this.modernSymmetricAlgorithmTypes.put(EAlgorithmType.Blowfish, blowfish);
 		this.modernSymmetricAlgorithmTypes.put(EAlgorithmType.RC4, rc4);
 		this.modernSymmetricAlgorithmTypes.put(EAlgorithmType.ChaCha20, chacha20);
-
 		this.asymmetricAlgorithmTypes.put(EAlgorithmType.RSA, rsa);
 		this.asymmetricAlgorithmTypes.put(EAlgorithmType.RSA_AES, rsa);
 
+		// modern bouncy castle
+		this.modernBouncyCastleSymmetricAlgorithmTypes.put(EAlgorithmType.Twofish,
+				new ArrayList<>(Arrays.asList(EKeySize.Twofish_128, EKeySize.Twofish_192, EKeySize.Twofish_256)));
+		this.modernBouncyCastleSymmetricAlgorithmTypes.put(EAlgorithmType.Serpent,
+				new ArrayList<>(Arrays.asList(EKeySize.Serpent_128, EKeySize.Serpent_192, EKeySize.Serpent_256)));
+		this.modernBouncyCastleSymmetricAlgorithmTypes.put(EAlgorithmType.CAST,
+				new ArrayList<>(Arrays.asList(EKeySize.CAST_40, EKeySize.CAST_128, EKeySize.CAST_256)));
+		this.modernBouncyCastleSymmetricAlgorithmTypes.put(EAlgorithmType.Camellia,
+				new ArrayList<>(Arrays.asList(EKeySize.Camellia_128, EKeySize.Camellia_192, EKeySize.Camellia_256)));
+
+		// basic
 		this.basicSymmetricAlgorithmTypes.add(EAlgorithmType.Shift_Cipher);
 		this.basicSymmetricAlgorithmTypes.add(EAlgorithmType.Substitution_Cipher);
 		this.basicSymmetricAlgorithmTypes.add(EAlgorithmType.Affine_Cipher);
@@ -120,20 +133,28 @@ public class MainModel {
 	}
 
 	public boolean chooseAlgorithm() {
+		System.out.println(algorithmType + " - " + mode + " - " + padding);
 		if (this.algorithmType != null) {
 			if (ICryptoAlgorithm.isBasicSymmetric(this.algorithmType)) {
 				this.algorithm = new BasicSymmetricEncryption(this.algorithmType);
 				return true;
 			} else {
-				if (this.keySize == null)
+				if (this.keySize == null || this.mode == null)
 					return false;
 				try {
 					if (ICryptoAlgorithm.isModernSymmetric(this.algorithmType))
-						this.algorithm = new ModernSymmetricEncryption(this.algorithmType, this.keySize);
+						this.algorithm = new ModernSymmetricEncryption(this.algorithmType, this.keySize, this.mode,
+								this.padding);
 					else if (ICryptoAlgorithm.isAsymmetricRSA(this.algorithmType)) {
-						this.algorithm = new RSA(this.keySize);
+						this.algorithm = new RSA(this.keySize, this.mode, this.padding);
 					} else if (ICryptoAlgorithm.isAsymmetricRSA_AES(this.algorithmType)) {
-						this.algorithm = new RSA_AES(this.keySize);
+						this.algorithm = new RSA_AES(this.keySize, this.mode, this.padding);
+					} else if (ICryptoAlgorithm.isBouncyCastleSymmetric(this.algorithmType)) {
+						if (this.keySize == null)
+							return false;
+						this.algorithm = new BouncyCastleSymmetricEncryption(this.algorithmType, this.keySize,
+								this.mode, this.padding);
+						return true;
 					} else {
 						return false;
 					}
@@ -152,27 +173,7 @@ public class MainModel {
 	}
 
 	public List<EPadding> getPaddings() {
-		return EPadding.getSupportedPadding(algorithmType);
-	}
-
-	public static void main(String[] args) throws Exception {
-		String srcFilePath = "resources/input/image_input.jpg";
-		String desFilePathEn = "resources/encrypt/image_output.jpg";
-		String desFilePathDe = "resources/decrypt/image_output.jpg";
-
-		MainModel model = new MainModel();
-		model.algorithmType = EAlgorithmType.RSA;
-		model.keySize = EKeySize.RSA_1024;
-		model.chooseAlgorithm();
-		if (model.algorithm != null) {
-			model.algorithm.genKey();
-
-			model.algorithm.saveKeyToFile("resources/key.data");
-			model.algorithm.encryptFile(srcFilePath, desFilePathEn);
-
-//			PrivateKey privateKey = ICryptoAlgorithm.loadPrivateKey("resources/privateKeyPath.key");
-//			((RSA_AES) model.algorithm).privateKey = privateKey;
-//			model.algorithm.decryptFile(desFilePathEn, desFilePathDe);
-		}
+		System.out.println("get paddings");
+		return EPadding.getSupportedPadding(algorithmType, mode);
 	}
 }
