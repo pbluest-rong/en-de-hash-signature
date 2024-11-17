@@ -13,8 +13,8 @@ public interface IHash {
 		EHashAlgorithm[] type = new EHashAlgorithm[] { EHashAlgorithm.MD2, EHashAlgorithm.MD5, EHashAlgorithm.SHA_1,
 				EHashAlgorithm.SHA_224, EHashAlgorithm.SHA_256, EHashAlgorithm.SHA_512, EHashAlgorithm.SHA_512_224,
 				EHashAlgorithm.SHA_512_256, EHashAlgorithm.SHA3_224, EHashAlgorithm.SHA3_256, EHashAlgorithm.SHA3_384,
-				EHashAlgorithm.SHA3_512, EHashAlgorithm.HAVAL, EHashAlgorithm.RIPEMD160, EHashAlgorithm.Whirlpool,
-				EHashAlgorithm.Tiger, EHashAlgorithm.MD4, EHashAlgorithm.GOST3411 };
+				EHashAlgorithm.SHA3_512, EHashAlgorithm.RIPEMD160, EHashAlgorithm.Whirlpool, EHashAlgorithm.Tiger,
+				EHashAlgorithm.MD4, EHashAlgorithm.GOST3411 };
 
 		String message = "Lê Bá Phụng";
 		String filePath = "resources/input/text_input.txt";

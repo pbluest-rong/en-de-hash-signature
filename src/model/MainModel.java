@@ -92,7 +92,6 @@ public class MainModel {
 		this.hashAlgorithms.add(EHashAlgorithm.SHA3_256);
 		this.hashAlgorithms.add(EHashAlgorithm.SHA3_384);
 		this.hashAlgorithms.add(EHashAlgorithm.SHA3_512);
-		this.hashAlgorithms.add(EHashAlgorithm.HAVAL);
 		this.hashAlgorithms.add(EHashAlgorithm.RIPEMD160);
 		this.hashAlgorithms.add(EHashAlgorithm.Whirlpool);
 		this.hashAlgorithms.add(EHashAlgorithm.Tiger);

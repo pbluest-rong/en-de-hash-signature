@@ -43,9 +43,6 @@
 - Tiger
 - GOST3411
 - RIPEMD160
->
-### Custom
-- HAVAL
 
 ## 5. Chữ ký điện tử (Signature)
 >

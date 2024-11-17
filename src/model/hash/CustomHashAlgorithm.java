@@ -26,11 +26,7 @@ public class CustomHashAlgorithm implements IHash {
 	private void chooseHashAlgorithm(EHashAlgorithm algorithm) {
 		switch (algorithm) {
 		case EHashAlgorithm.MD4: {
-			this.customHashAlgorithm = new HavalHash();
-			break;
-		}
-		case EHashAlgorithm.HAVAL: {
-			this.customHashAlgorithm = new HavalHash();
+			this.customHashAlgorithm = new CustomMD4();
 			break;
 		}
 		case EHashAlgorithm.RIPEMD160: {

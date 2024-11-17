@@ -6,9 +6,7 @@ public enum EHashAlgorithm {
 	SHA_512_224("SHA-512/224"), SHA_512_256("SHA-512/256"), SHA3_224("SHA3-224"), SHA3_256("SHA3-256"),
 	SHA3_384("SHA3-384"), SHA3_512("SHA3-512"),
 	// Bouncy Castle
-	MD4("MD4"), Whirlpool("Whirlpool"), Tiger("Tiger"), GOST3411("GOST3411"), RIPEMD160("RIPEMD160"),
-	// Custom
-	HAVAL("HAVAL");
+	MD4("MD4"), Whirlpool("Whirlpool"), Tiger("Tiger"), GOST3411("GOST3411"), RIPEMD160("RIPEMD160");
 
 	private final String hashAlgorithm;
 
@@ -32,8 +30,6 @@ public enum EHashAlgorithm {
 	public boolean isJavaHashAlgorithmInstances() {
 		switch (this) {
 		case MD4:
-			return false;
-		case HAVAL:
 			return false;
 		case Whirlpool:
 			return false;
