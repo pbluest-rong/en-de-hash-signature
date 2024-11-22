@@ -22,22 +22,6 @@ public class SubstitutionCipher extends ABasicSymmetric {
 		}
 	}
 
-	public void generateSubstitutionMap() {
-		if (key == null || key.length() < ALPHABET.length()) {
-			throw new IllegalStateException("Key must be generated and long enough to map all alphabet characters.");
-		}
-
-		substitutionMap.clear();
-		reverseSubstitutionMap.clear();
-
-		for (int i = 0; i < ALPHABET.length(); i++) {
-			char plainChar = ALPHABET.charAt(i);
-			char cipherChar = key.charAt(i);
-			substitutionMap.put(plainChar, cipherChar);
-			reverseSubstitutionMap.put(cipherChar, plainChar);
-		}
-	}
-
 	@Override
 	public String encrypt(String plainText) {
 		StringBuilder cipherText = new StringBuilder();
@@ -55,8 +39,9 @@ public class SubstitutionCipher extends ABasicSymmetric {
 		}
 		return plainText.toString();
 	}
-	 @Override
-	    public EAlgorithmType type() {
-	    	return EAlgorithmType.Substitution_Cipher;
-	    }
+
+	@Override
+	public EAlgorithmType type() {
+		return EAlgorithmType.Substitution_Cipher;
+	}
 }

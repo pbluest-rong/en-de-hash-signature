@@ -68,7 +68,7 @@ public interface ICryptoAlgorithm {
 
 	public static boolean isBasicSymmetric(EAlgorithmType type) {
 		if (type.getAlgorithm().equals("Shift Cipher") || type.getAlgorithm().equals("Substitution Cipher")
-				|| type.getAlgorithm().equals("Affine") || type.getAlgorithm().equals("Vingenere Cipher")
+				|| type.getAlgorithm().equals("Affine") || type.getAlgorithm().equals("Vigenere Cipher")
 				|| type.getAlgorithm().equals("Hill Cipher") || type.getAlgorithm().equals("Permutation Cipher"))
 			return true;
 		return false;

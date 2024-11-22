@@ -1,93 +1,147 @@
 package model.basic_symmetric;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
-public class CipherConfig {
-    private int shiftCipherShift = 5; // 0-25
-    private int affineCipherA = 5; // 0-25
-    private int affineCipherB = 9; // 0-25
-    private Map<Character, Character> substitutionMap = new HashMap<>();
-    private String vigenereKey = "pblues";
-    private int[] permutationKey = { 2, 0, 3, 1 };
-    private int[][] hillCipherKeyMatrix = { { 1, 3 }, { 1, 5 } };
+public class CipherConfig implements Serializable {
+	private static final long serialVersionUID = 1L;
 
-    public int getShiftCipherShift() {
-        return shiftCipherShift;
-    }
+	private int shiftCipherShift;// key là số lần dịch chuyển: 4
+	private int affineCipherA;// 5
+	private int affineCipherB;// 9
+	private Map<Character, Character> substitutionMap = new HashMap<>();// key là 1 chuỗi hoán vị
+	// Mỗi ký tự trong plaintext được mã hóa dựa trên phép dịch ký tự theo key tương
+	// ứng.
+	private String vigenereKey;
+	// Nếu key là [3,1,4,2], ký tự thứ 1 sẽ chuyển đến vị trí thứ 3, ký tự thứ 2
+	// chuyển đến vị trí thứ 1,...
+	private int[] permutationKey = { 2, 0, 3, 1 };
+	// 1 ma trận n x n với các phần tử là số nguyên modulo kích thước bảng chữ cái
+	// Điều kiện: Determinant của ma trận phải khả nghịch modulo kích thước bảng chữ
+	// cái.
+	private int[][] hillCipherKeyMatrix;
 
-    public void setShiftCipherShift(int shiftCipherShift) {
-        if (shiftCipherShift >= 0 && shiftCipherShift <= 25) {
-            this.shiftCipherShift = shiftCipherShift;
-        }
-    }
+	public int getShiftCipherShift() {
+		return shiftCipherShift;
+	}
 
-    public int getAffineCipherA() {
-        return affineCipherA;
-    }
+	public int getAffineCipherA() {
+		return affineCipherA;
+	}
 
-    public void setAffineCipherA(int affineCipherA) {
-        if (affineCipherA >= 0 && affineCipherA <= 25) {
-            this.affineCipherA = affineCipherA;
-        }
-    }
+	public int getAffineCipherB() {
+		return affineCipherB;
+	}
 
-    public int getAffineCipherB() {
-        return affineCipherB;
-    }
+	public Map<Character, Character> getSubstitutionMap() {
+		return substitutionMap;
+	}
 
-    public void setAffineCipherB(int affineCipherB) {
-        if (affineCipherB >= 0 && affineCipherB <= 25) {
-            this.affineCipherB = affineCipherB;
-        }
-    }
+	public String getVigenereKey() {
+		return vigenereKey;
+	}
 
-    public Map<Character, Character> getSubstitutionMap() {
-        return substitutionMap;
-    }
+	public int[] getPermutationKey() {
+		return permutationKey;
+	}
 
-    public void setSubstitutionMap(Map<Character, Character> substitutionMap) {
-        this.substitutionMap = substitutionMap;
-    }
+	public int[][] getHillCipherKeyMatrix() {
+		return hillCipherKeyMatrix;
+	}
 
-    public String getVigenereKey() {
-        return vigenereKey;
-    }
+	// Tạo key cho Shift Cipher
+	public void generateShiftCipherKey() {
+		Random random = new Random();
+		this.shiftCipherShift = random.nextInt(26); // Giá trị từ 0 đến 25
+	}
 
-    public void setVigenereKey(String vigenereKey) {
-        this.vigenereKey = vigenereKey;
-    }
+	public void generateAffineCipherKey() {
+		int alphabetSize = ABasicSymmetric.ALPHABET.length(); // Độ dài bảng chữ cái
+		Random random = new Random();
+		do {
+			this.affineCipherA = random.nextInt(alphabetSize); // Giá trị từ 0 đến alphabetSize - 1
+		} while (gcd(this.affineCipherA, alphabetSize) != 1 || !hasModularInverse(this.affineCipherA, alphabetSize));
+		this.affineCipherB = random.nextInt(alphabetSize); // Giá trị từ 0 đến alphabetSize - 1
+	}
 
-    public int[] getPermutationKey() {
-        return permutationKey;
-    }
+	private boolean hasModularInverse(int a, int m) {
+		try {
+			modularInverse(a, m);
+			return true;
+		} catch (IllegalArgumentException e) {
+			return false;
+		}
+	}
 
-    public void setPermutationKey(int[] permutationKey) {
-        this.permutationKey = permutationKey;
-    }
+	private int modularInverse(int a, int m) {
+		a = (a % m + m) % m; // Đảm bảo a không âm
+		for (int x = 1; x < m; x++) {
+			if ((a * x) % m == 1) {
+				return x;
+			}
+		}
+		throw new IllegalArgumentException("No modular inverse found for a = " + a);
+	}
 
-    public int[][] getHillCipherKeyMatrix() {
-        return hillCipherKeyMatrix;
-    }
+	// Tạo key cho Substitution Cipher
+	public void generateSubstitutionCipherKey() {
+		Random random = new Random();
+		List<Character> characters = new ArrayList<>();
+		for (char c : ABasicSymmetric.ALPHABET.toCharArray()) {
+			characters.add(c);
+		}
+		Collections.shuffle(characters); // Hoán vị bảng chữ cái
+		Map<Character, Character> substitutionMap = new HashMap<>();
+		for (int i = 0; i < characters.size(); i++) {
+			substitutionMap.put(ABasicSymmetric.ALPHABET.charAt(i), characters.get(i));
+		}
+		this.substitutionMap = substitutionMap;
+	}
 
-    public void setHillCipherKeyMatrix(int[][] hillCipherKeyMatrix) {
-        // Kiểm tra tính khả nghịch của ma trận khóa
-        if (isInvertible(hillCipherKeyMatrix)) {
-            this.hillCipherKeyMatrix = hillCipherKeyMatrix;
-        } else {
-            throw new IllegalArgumentException("Ma trận khóa không khả nghịch.");
-        }
-    }
+	// Tạo key cho Vigenère Cipher
+	public void generateVigenereCipherKey() {
+		Random random = new Random();
+		int keyLength = random.nextInt(10) + 5; // Độ dài key từ 5 đến 15
+		StringBuilder vigenereKey = new StringBuilder();
+		for (int i = 0; i < keyLength; i++) {
+			vigenereKey.append(ABasicSymmetric.ALPHABET.charAt(random.nextInt(ABasicSymmetric.ALPHABET.length())));
+		}
+		this.vigenereKey = vigenereKey.toString();
+	}
 
-    // Phương thức kiểm tra tính khả nghịch của ma trận
-    private boolean isInvertible(int[][] matrix) {
-        // Tính toán định thức và kiểm tra
-        // Đảm bảo rằng ma trận là 2x2
-    	 if (matrix.length != 2 || matrix[0].length != 2) {
-             return false;
-         }
+	// Tạo key cho Permutation Cipher
+	public void generatePermutationCipherKey() {
+		Random random = new Random();
+		int permLength = 4; // Độ dài khối là 4 (có thể thay đổi)
+		int[] permutationKey = new int[permLength];
+		List<Integer> positions = new ArrayList<>();
+		for (int i = 0; i < permLength; i++) {
+			positions.add(i);
+		}
+		Collections.shuffle(positions); // Hoán vị các vị trí
+		for (int i = 0; i < permLength; i++) {
+			permutationKey[i] = positions.get(i);
+		}
+		this.permutationKey = permutationKey;
+	}
 
-         int determinant = matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
-         return determinant != 0;
-    }
+	// Tạo key cho Hill Cipher
+	public void generateHillCipherKey() {
+		int[][][] FIXED_KEYS = { { { 6, 24, 1 }, { 13, 16, 10 }, { 20, 17, 15 } } };
+		Random rand = new Random();
+		this.hillCipherKeyMatrix = FIXED_KEYS[rand.nextInt(FIXED_KEYS.length)];
+	}
+
+	// Helper: Tính GCD
+	private int gcd(int a, int b) {
+		if (b == 0)
+			return a;
+		return gcd(b, a % b);
+	}
+	
 }

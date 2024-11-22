@@ -41,6 +41,8 @@ public class JavaHash implements IHash {
 
 		byte[] digest = di.getMessageDigest().digest();
 		BigInteger res = new BigInteger(1, digest);
+		
+		di.close();
 		return res.toString(16);
 	}
 

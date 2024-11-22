@@ -1,29 +1,16 @@
 package model.basic_symmetric;
 
-import java.awt.Dialog;
-import java.awt.RenderingHints.Key;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.PublicKey;
-import java.security.SecureRandom;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.bouncycastle.jcajce.provider.asymmetric.ec.GMSignatureSpi.sha256WithSM2;
 
 import model.EAlgorithmType;
-import model.EKeySize;
 import model.EModes;
 import model.EPadding;
 import model.ICryptoAlgorithm;
-
-/**
- * @author Ba Phung Le Mã hóa đối xứng cơ bản - Text - Bảng chữ cái Anh, Việt -
- *         Cơ chế phát sinh khóa nếu user chưa có - Cơ chế load khóa nếu user đã
- *         có
- */
 
 public class BasicSymmetricEncryption implements ICryptoAlgorithm {
 	private ABasicSymmetric basicSymmetric;
@@ -63,29 +50,50 @@ public class BasicSymmetricEncryption implements ICryptoAlgorithm {
 
 	@Override
 	public void genKey() throws Exception {
-		SecureRandom random = new SecureRandom();
-		StringBuilder keyBuilder = new StringBuilder();
-		for (int i = 0; i < 16; i++) {
-			keyBuilder.append((char) ('a' + random.nextInt(26)));
-		}
-		basicSymmetric.key = keyBuilder.toString();
+		if (this.basicSymmetric != null)
+			switch (basicSymmetric.type()) {
+			case EAlgorithmType.Shift_Cipher: {
+				this.basicSymmetric.config.generateShiftCipherKey();
+				break;
+			}
+			case EAlgorithmType.Substitution_Cipher: {
+				this.basicSymmetric.config.generateSubstitutionCipherKey();
+				break;
+			}
+			case EAlgorithmType.Affine_Cipher: {
+				this.basicSymmetric.config.generateAffineCipherKey();
+				break;
+			}
+			case EAlgorithmType.Vigenere_Cipher: {
+				this.basicSymmetric.config.generateVigenereCipherKey();
+				break;
+			}
+			case EAlgorithmType.Permutation_Cipher: {
+				this.basicSymmetric.config.generatePermutationCipherKey();
+				break;
+			}
+			case EAlgorithmType.Hill_Cipher: {
+				this.basicSymmetric.config.generateHillCipherKey();
+				break;
+			}
+			default:
+				break;
+			}
 	}
 
 	@Override
 	public void loadKey(Object key) throws Exception {
-		if (key instanceof String) {
-			basicSymmetric.key = (String) key;
-		}
+
 	}
 
 	@Override
 	public byte[] encrypt(String text) throws Exception {
-		return basicSymmetric.encrypt(text).getBytes();
+		return basicSymmetric.encrypt(text).getBytes("UTF-8");
 	}
 
 	@Override
 	public String decrypt(byte[] data) throws Exception {
-		return basicSymmetric.decrypt(new String(data));
+		return basicSymmetric.decrypt(new String(data, "UTF-8"));
 	}
 
 	@Override
@@ -131,45 +139,30 @@ public class BasicSymmetricEncryption implements ICryptoAlgorithm {
 
 	@Override
 	public boolean saveKeyToFile(String filePath) throws Exception {
-		return false;
+		try (FileOutputStream fos = new FileOutputStream(filePath);
+				ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+			oos.writeObject(this.config);
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	@Override
 	public boolean loadKeyFromFile(String filePath) throws Exception {
-		return false;
+		try (FileInputStream fis = new FileInputStream(filePath); ObjectInputStream ois = new ObjectInputStream(fis)) {
+			this.config = (CipherConfig) ois.readObject();
+			return true;
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	@Override
 	public int getKeySize() {
 		return 0;
-	}
-
-	public static void main(String[] args) throws Exception {
-		ICryptoAlgorithm shiftCipher = new BasicSymmetricEncryption(EAlgorithmType.Shift_Cipher);
-		ICryptoAlgorithm affineCipher = new BasicSymmetricEncryption(EAlgorithmType.Affine_Cipher);
-		ICryptoAlgorithm subsitutionCipher = new BasicSymmetricEncryption(EAlgorithmType.Substitution_Cipher);
-		ICryptoAlgorithm vigenereCipher = new BasicSymmetricEncryption(EAlgorithmType.Vigenere_Cipher);
-		ICryptoAlgorithm permutationCipher = new BasicSymmetricEncryption(EAlgorithmType.Permutation_Cipher);
-		ICryptoAlgorithm hillCipher = new BasicSymmetricEncryption(EAlgorithmType.Hill_Cipher);
-
-		shiftCipher.genKey();
-
-		String plaintext = "“Pass đồ” Làng đại học là một website nhằm phục vụ các nhu cầu trao đổi đồ cũ của sinh viên trong và quanh làng đại học TPHCM cũng như một phần nhỏ giúp bảo vệ môi trường. ";
-		try {
-			String ciphertext = Base64.getEncoder().encodeToString(shiftCipher.encrypt(plaintext));
-			String decryptedText = shiftCipher.decrypt(Base64.getDecoder().decode(ciphertext));
-
-			System.out.println("Plaintext: " + plaintext);
-			System.out.println("Ciphertext: " + Base64.getEncoder().encodeToString(ciphertext.getBytes()));
-			System.out.println("Decrypted Text: " + decryptedText);
-			System.out.println();
-
-			shiftCipher.encryptFile("resources/input/text_input.txt", "resources/input/text_output.txt");
-			shiftCipher.decryptFile("resources/input/text_output.txt", "resources/input/text_output_de.txt");
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	@Override
@@ -180,13 +173,58 @@ public class BasicSymmetricEncryption implements ICryptoAlgorithm {
 
 	@Override
 	public boolean setMode(EModes mode) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean setPadding(EPadding padding) {
-		// TODO Auto-generated method stub
 		return false;
+	}
+
+	public static void main(String[] args) throws Exception {
+		// ok
+		ICryptoAlgorithm shiftCipher = new BasicSymmetricEncryption(EAlgorithmType.Shift_Cipher);
+		// ok
+		ICryptoAlgorithm affineCipher = new BasicSymmetricEncryption(EAlgorithmType.Affine_Cipher);
+		// ok
+		ICryptoAlgorithm subsitutionCipher = new BasicSymmetricEncryption(EAlgorithmType.Substitution_Cipher);
+		//
+		ICryptoAlgorithm vigenereCipher = new BasicSymmetricEncryption(EAlgorithmType.Vigenere_Cipher);
+		// ok
+		ICryptoAlgorithm permutationCipher = new BasicSymmetricEncryption(EAlgorithmType.Permutation_Cipher);
+		//
+		ICryptoAlgorithm hillCipher = new BasicSymmetricEncryption(EAlgorithmType.Hill_Cipher);
+
+		String plaintext = "Trong một thế giới ngày càng phát triển,"
+				+ " công nghệ đang chiếm lĩnh hầu hết mọi lĩnh vực của cuộc sống."
+				+ " Từ trí tuệ nhân tạo đến Internet vạn vật,"
+				+ " chúng ta đang chứng kiến sự thay đổi vượt bậc trong cách thức con người tương tác và làm việc."
+				+ " Trong khi đó, việc bảo vệ dữ liệu và thông tin cá nhân đang trở thành một vấn đề quan trọng hơn bao giờ hết.";
+
+		String src = "resources/input/text.txt";
+		String fileKey = "resources/input/vigenere_key.data";
+		String en = "resources/input/en.txt";
+		String de = "resources/input/de.txt";
+
+		try {
+			ICryptoAlgorithm al = hillCipher;
+			al.genKey();
+//			al.loadKeyFromFile(fileKey);
+			String ciphertext = Base64.getEncoder().encodeToString(al.encrypt(plaintext)); // mã hóa sang Base64
+			String decryptedText = new String(al.decrypt(Base64.getDecoder().decode(ciphertext))); // giải mã và chuyển
+																									// lại thành String
+
+			System.out.println("Plaintext:      " + plaintext);
+			System.out.println("Ciphertext: " + Base64.getEncoder().encodeToString(ciphertext.getBytes()));
+			System.out.println("Decrypted Text: " + decryptedText);
+			System.out.println(plaintext.equals(decryptedText));
+
+//			shiftCipher.saveKeyToFile(fileKey);
+//			shiftCipher.encryptFile(src, en);
+//			shiftCipher.decryptFile(en, de);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }

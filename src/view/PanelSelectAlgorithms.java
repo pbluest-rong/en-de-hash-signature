@@ -10,10 +10,12 @@ import javax.swing.JComponent;
 import java.awt.CardLayout;
 import javax.swing.border.TitledBorder;
 
+import config.GlobalConstants;
 import controller.Controller;
 
 import javax.swing.border.EtchedBorder;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.event.ActionListener;
 import java.awt.GridLayout;
@@ -47,19 +49,23 @@ public class PanelSelectAlgorithms extends JPanel {
 		panel.setLayout(new GridLayout(4, 1, 0, 0));
 
 		rdb_basic_symmetric = new JRadioButton("Basic Symmetric");
-		rdb_basic_symmetric.setFont(new Font("Tahoma", Font.BOLD, 18));
+		rdb_basic_symmetric.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		rdb_basic_symmetric.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_2));
 		panel.add(rdb_basic_symmetric);
 
 		rdb_modern_symmetric = new JRadioButton("Modern Symmetric");
-		rdb_modern_symmetric.setFont(new Font("Tahoma", Font.BOLD, 18));
+		rdb_modern_symmetric.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		rdb_modern_symmetric.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_2));
 		panel.add(rdb_modern_symmetric);
 
 		rdb_modern_symmetric_bouncy_castle = new JRadioButton("Bouncy Castle");
-		rdb_modern_symmetric_bouncy_castle.setFont(new Font("Tahoma", Font.BOLD, 18));
+		rdb_modern_symmetric_bouncy_castle.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		rdb_modern_symmetric_bouncy_castle.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_2));
 		panel.add(rdb_modern_symmetric_bouncy_castle);
 
 		rdb_asymmetric = new JRadioButton("Asymmetric");
-		rdb_asymmetric.setFont(new Font("Tahoma", Font.BOLD, 18));
+		rdb_asymmetric.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		rdb_asymmetric.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_2));
 		panel.add(rdb_asymmetric);
 
 		ButtonGroup bg = new ButtonGroup();
@@ -73,7 +79,7 @@ public class PanelSelectAlgorithms extends JPanel {
 		panel_1.setLayout(new BorderLayout(0, 0));
 
 		cbb_algorithm = new JComboBox();
-		cbb_algorithm.setFont(new Font("Tahoma", Font.BOLD | Font.ITALIC, 20));
+		cbb_algorithm.setFont(new Font("Tahoma", Font.BOLD | Font.ITALIC, GlobalConstants.FONT_SIZE_3));
 		panel_1.add(cbb_algorithm, BorderLayout.NORTH);
 	}
 

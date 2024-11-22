@@ -19,6 +19,7 @@ import java.awt.Dimension;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 
+import config.GlobalConstants;
 import controller.Controller;
 
 import javax.swing.border.EtchedBorder;
@@ -74,19 +75,20 @@ public class PanelCheckFile extends JPanel {
 		panel_center_2.setLayout(new BorderLayout(0, 0));
 		panel_center.add(panel_center_2, BorderLayout.SOUTH);
 		JLabel lblNewLabel2 = new JLabel("File 2: ");
-		lblNewLabel2.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblNewLabel2.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_center_2.add(lblNewLabel2, BorderLayout.WEST);
 
 		tf_input_file2 = new JTextField();
+		tf_input_file2.setFont(new Font("Tahoma", Font.PLAIN, GlobalConstants.FONT_SIZE_0));
 		tf_input_file2.setColumns(10);
 		panel_center_2.add(tf_input_file2, BorderLayout.CENTER);
 
 		btn_open_file2 = new JButton("Open");
-		btn_open_file2.setFont(new Font("Tahoma", Font.BOLD, 12));
+		btn_open_file2.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_center_2.add(btn_open_file2, BorderLayout.EAST);
 
 		btn_hash_file2 = new JButton("Hash File 2");
-		btn_hash_file2.setFont(new Font("Tahoma", Font.BOLD, 20));
+		btn_hash_file2.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_3));
 		panel_center_2.add(btn_hash_file2, BorderLayout.SOUTH);
 
 		panel_center.add(panel_south_1, BorderLayout.NORTH);
@@ -101,37 +103,39 @@ public class PanelCheckFile extends JPanel {
 		panel.setLayout(new BorderLayout(0, 0));
 		
 		lblNewLabel = new JLabel("File 1: ");
-		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel.add(lblNewLabel, BorderLayout.WEST);
 		
 		tf_input_file1 = new JTextField();
+		tf_input_file1.setFont(new Font("Tahoma", Font.PLAIN, GlobalConstants.FONT_SIZE_0));
 		panel.add(tf_input_file1, BorderLayout.CENTER);
 		tf_input_file1.setColumns(10);
 		
 		btn_open_file1 = new JButton("Open");
-		btn_open_file1.setFont(new Font("Tahoma", Font.BOLD, 12));
+		btn_open_file1.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel.add(btn_open_file1, BorderLayout.EAST);
 		
 		btn_hash_file1 = new JButton("Hash File 1");
-		btn_hash_file1.setFont(new Font("Tahoma", Font.BOLD, 20));
+		btn_hash_file1.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_3));
 		panel.add(btn_hash_file1, BorderLayout.SOUTH);
 		add(panel_center, BorderLayout.CENTER);
 
 		JLabel lbl_text = new JLabel("Text:   ");
-		lbl_text.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lbl_text.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_south_1.add(lbl_text, BorderLayout.WEST);
 
 		tf_input_text = new JTextField();
+		tf_input_text.setFont(new Font("Tahoma", Font.PLAIN, GlobalConstants.FONT_SIZE_0));
 		panel_south_1.add(tf_input_text, BorderLayout.CENTER);
 		tf_input_text.setColumns(10);
 
 		btn_hash_text = new JButton("Hash Text");
-		btn_hash_text.setFont(new Font("Tahoma", Font.BOLD, 20));
+		btn_hash_text.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_3));
 		panel_south_1.add(btn_hash_text, BorderLayout.EAST);
 
 		tf_output_text = new JTextField();
 		tf_output_text.setEditable(false);
-		tf_output_text.setFont(new Font("Tahoma", Font.BOLD, 12));
+		tf_output_text.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_south_1.add(tf_output_text, BorderLayout.SOUTH);
 		tf_output_text.setColumns(10);
 		
@@ -141,13 +145,13 @@ public class PanelCheckFile extends JPanel {
 		panel_1.setLayout(new GridLayout(2, 1, 0, 0));
 		
 		tf_output_file1 = new JTextField();
-		tf_output_file1.setFont(new Font("Tahoma", Font.BOLD, 12));
+		tf_output_file1.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		tf_output_file1.setEditable(false);
 		panel_1.add(tf_output_file1);
 		tf_output_file1.setColumns(10);
 		
 		tf_output_file2 = new JTextField();
-		tf_output_file2.setFont(new Font("Tahoma", Font.BOLD, 12));
+		tf_output_file2.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		tf_output_file2.setEditable(false);
 		panel_1.add(tf_output_file2);
 		tf_output_file2.setColumns(10);
@@ -158,7 +162,7 @@ public class PanelCheckFile extends JPanel {
 		panel_north.setLayout(new BorderLayout(0, 0));
 		
 		cbb_type = new JComboBox();
-		cbb_type.setFont(new Font("Tahoma", Font.BOLD, 20));
+		cbb_type.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_3));
 		panel_north.add(cbb_type);
 	}
 

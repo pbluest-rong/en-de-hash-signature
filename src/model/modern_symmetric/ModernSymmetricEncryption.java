@@ -10,6 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -88,18 +89,29 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 			System.arraycopy(encryptedData, 0, result, ivBytes.length, encryptedData.length);
 			return result;
 		} else {
-			if (EAlgorithmType.requiresIV(mode, algorithmType) && iv != null)
+			if (padding == EPadding.NoPadding && data.length % cipher.getBlockSize() != 0) {
+				int blockSize = cipher.getBlockSize();
+				int paddingRequired = blockSize - (data.length % blockSize);
+				byte[] paddedData = Arrays.copyOf(data, data.length + paddingRequired);
+				data = paddedData;
+			}
+			if (EAlgorithmType.requiresIV(mode, algorithmType)) {
+				if (iv == null && algorithmType.getIvLength() != null) {
+					iv = ICryptoAlgorithm.generateIV(algorithmType.getIvLength());
+				}
 				cipher.init(Cipher.ENCRYPT_MODE, this.key, iv);
-			else
+
+			} else
 				cipher.init(Cipher.ENCRYPT_MODE, this.key);
 
+			return cipher.doFinal(data);
 		}
-		return cipher.doFinal(data);
 	}
 
 	@Override
 	public String decrypt(byte[] data) throws Exception {
 		Cipher cipher = Cipher.getInstance(algorithmType.getCipherInstanceString(mode, padding));
+
 		if (ICryptoAlgorithm.isSymmetricChaCha(this.algorithmType)) {
 			// Tách IV từ dữ liệu đầu vào
 			byte[] ivBytes = new byte[12];
@@ -113,12 +125,24 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 			cipher.init(Cipher.DECRYPT_MODE, this.key, iv);
 			return new String(cipher.doFinal(encryptedData), StandardCharsets.UTF_8);
 		} else {
-			if (EAlgorithmType.requiresIV(mode, algorithmType) && iv != null)
+			if (EAlgorithmType.requiresIV(mode, algorithmType) && iv != null) {
 				cipher.init(Cipher.DECRYPT_MODE, this.key, iv);
-			else
+			} else {
 				cipher.init(Cipher.DECRYPT_MODE, this.key);
+			}
+
+			byte[] decryptedData = cipher.doFinal(data);
+			// Nếu là NoPadding, loại bỏ padding thủ công
+			if (padding == EPadding.NoPadding) {
+				int originalLength = decryptedData.length;
+				while (originalLength > 0 && decryptedData[originalLength - 1] == 0) {
+					originalLength--;
+				}
+				decryptedData = Arrays.copyOf(decryptedData, originalLength);
+			}
+
+			return new String(decryptedData, StandardCharsets.UTF_8);
 		}
-		return new String(cipher.doFinal(data), StandardCharsets.UTF_8);
 	}
 
 	@Override
@@ -306,7 +330,7 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 		String desFilePathDe = "resources/decrypt/image_output.jpg";
 
 		ModernSymmetricEncryption modernSymmetric = new ModernSymmetricEncryption(EAlgorithmType.AES, EKeySize.AES_256,
-				EModes.CBC, EPadding.getSupportedPadding(EAlgorithmType.AES, EModes.CBC).get(0));
+				EModes.CBC, EPadding.getSupportedPadding(EAlgorithmType.AES, EModes.CBC).get(1));
 		modernSymmetric.genKey();
 		byte[] ciphertext = modernSymmetric.encrypt("Pblues");
 		System.out.println(ICryptoAlgorithm.encryptBase64(ciphertext));

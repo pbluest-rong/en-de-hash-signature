@@ -119,4 +119,12 @@ public class RSA implements ICryptoAlgorithm {
 		}
 		return false;
 	}
+
+	public static void main(String[] args) throws Exception {
+		ICryptoAlgorithm rsa = new RSA(EKeySize.RSA_1024, EModes.ECB, EPadding.OAEPWithSHA256AndMGF1Padding);
+		rsa.genKey();
+		byte[] en = rsa.encrypt("Pblues");
+		String de = rsa.decrypt(en);
+		System.out.println(de);
+	}
 }

@@ -50,7 +50,6 @@ public class Controller implements ActionListener {
 	private boolean isLoadHash = false;
 
 	public Controller() {
-
 		this.model = new MainModel();
 		this.panelGenLoadKey = new PanelGenLoadKey(this);
 		this.panelCheckFile = new PanelCheckFile(this);
@@ -83,7 +82,12 @@ public class Controller implements ActionListener {
 					@Override
 					protected Void doInBackground() throws Exception {
 						SwingUtilities.invokeLater(() -> progressBar.setVisible(true));
-
+						resetUIForAlgorithm();
+						
+						panelGenLoadKey.cbb_key_size.removeAllItems();
+						panelGenLoadKey.cbb_modes.removeAllItems();
+						panelGenLoadKey.cbb_padding.removeAllItems();
+						
 						model.algorithmType = EAlgorithmType
 								.get(panelSelectAlgorithms.cbb_algorithm.getSelectedItem().toString());
 
@@ -95,33 +99,20 @@ public class Controller implements ActionListener {
 							panelGenLoadKey.cbb_padding.setVisible(false);
 							panelGenLoadKey.lbl_padding.setVisible(false);
 						} else {
-//							if (ICryptoAlgorithm.isBouncyCastleSymmetric(model.algorithmType)) {
-//								panelGenLoadKey.lbl_modes.setVisible(false);
-//								panelGenLoadKey.cbb_modes.setVisible(false);
-//								panelGenLoadKey.cbb_padding.setVisible(false);
-//								panelGenLoadKey.lbl_padding.setVisible(false);
-//								panelGenLoadKey.lbl_key_size.setVisible(true);
-//								panelGenLoadKey.cbb_key_size.setVisible(true);
-//								loadKeySize(model.algorithmType);
-//							} else {
-								panelGenLoadKey.lbl_key_size.setVisible(true);
-								panelGenLoadKey.lbl_modes.setVisible(true);
-								panelGenLoadKey.cbb_key_size.setVisible(true);
-								panelGenLoadKey.cbb_modes.setVisible(true);
-								panelGenLoadKey.cbb_padding.setVisible(true);
-								panelGenLoadKey.lbl_padding.setVisible(true);
+							panelGenLoadKey.lbl_key_size.setVisible(true);
+							panelGenLoadKey.lbl_modes.setVisible(true);
+							panelGenLoadKey.cbb_key_size.setVisible(true);
+							panelGenLoadKey.cbb_modes.setVisible(true);
+							panelGenLoadKey.cbb_padding.setVisible(true);
+							panelGenLoadKey.lbl_padding.setVisible(true);
 
-								loadKeySize(model.algorithmType);
-								loadModes(model.getModes());
-//								if (panelGenLoadKey.cbb_modes.getItemCount() > 0)
-//									panelGenLoadKey.cbb_modes.setSelectedIndex(0);
-//							}
+							loadKeySize(model.algorithmType);
+							loadModes(model.getModes());
 						}
 						if (model.algorithmType != null) {
 							if (panelGenLoadKey.cbb_key_size.getItemCount() > 0)
 								panelGenLoadKey.cbb_key_size.setSelectedIndex(0);
 						}
-						resetUIForAlgorithm();
 						return null;
 					}
 
@@ -214,7 +205,7 @@ public class Controller implements ActionListener {
 											JOptionPane.WARNING_MESSAGE);
 								}
 							}
-						} else {
+						} else if (panelGenLoadKey.rdo_not_save_key.isSelected()) {
 							if (this.model.algorithm != null) {
 								try {
 									this.model.algorithm.genKey();
@@ -224,6 +215,17 @@ public class Controller implements ActionListener {
 								} catch (Exception e1) {
 									e1.printStackTrace();
 								}
+							}
+						}
+					} else {
+						if (this.model.algorithm != null) {
+							try {
+								this.model.algorithm.genKey();
+								System.out.println("generated key!");
+								JOptionPane.showMessageDialog(panelGenLoadKey, "Generate key is successs!", "Success",
+										JOptionPane.INFORMATION_MESSAGE);
+							} catch (Exception e1) {
+								e1.printStackTrace();
 							}
 						}
 					}
@@ -253,6 +255,8 @@ public class Controller implements ActionListener {
 								this.panelGenLoadKey.cbb_key_size.setSelectedIndex(i);
 						}
 					}
+					JOptionPane.showMessageDialog(panelGenLoadKey, "Load key is successs!", "Success",
+							JOptionPane.INFORMATION_MESSAGE);
 				} catch (Exception e1) {
 					e1.printStackTrace();
 					JOptionPane.showMessageDialog(panelGenLoadKey, "Error!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -559,6 +563,223 @@ public class Controller implements ActionListener {
 		}
 	}
 
+	private void switchLoadUI() {
+		SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+			@Override
+			protected Void doInBackground() throws Exception {
+				SwingUtilities.invokeLater(() -> progressBar.setVisible(true));
+				panelGenLoadKey.tf_file_path.setText("");
+				if (!isSelectBasic && panelSelectAlgorithms.rdb_basic_symmetric.isSelected()) {
+					isSelectBasic = true;
+					isSelectModern = false;
+					isSelectAsymmetric = false;
+					isSelectBouncyCastle = false;
+					loadBasicSymmetricAlgorithms();
+				} else if (!isSelectModern && panelSelectAlgorithms.rdb_modern_symmetric.isSelected()) {
+					loadMordernSymmetricAlgorithms();
+					isSelectBasic = false;
+					isSelectModern = true;
+					isSelectAsymmetric = false;
+					isSelectBouncyCastle = false;
+				} else if (!isSelectAsymmetric && panelSelectAlgorithms.rdb_asymmetric.isSelected()) {
+					loadAsymmetricAlgorithms();
+					isSelectBasic = false;
+					isSelectModern = false;
+					isSelectAsymmetric = true;
+					isSelectBouncyCastle = false;
+				} else if (!isSelectBouncyCastle
+						&& panelSelectAlgorithms.rdb_modern_symmetric_bouncy_castle.isSelected()) {
+					loadBouncyCastleSymmetricAlgorithms();
+					isSelectBasic = false;
+					isSelectModern = false;
+					isSelectAsymmetric = false;
+					isSelectBouncyCastle = true;
+				}
+				return null;
+			}
+
+			@Override
+			protected void done() {
+				// Ẩn progress bar sau khi công việc kết thúc
+				progressBar.setVisible(false);
+			}
+		};
+		worker.execute();
+	}
+
+	private void resetUIForAlgorithm() {
+		panelGenLoadKey.tf_file_path.setText("");
+		if (this.panelEnDe.rdo_text.isSelected()) {
+			this.panelGenLoadKey.lbl_fileKey.setVisible(false);
+			this.panelGenLoadKey.btn_open_file.setVisible(false);
+			this.panelGenLoadKey.tf_file_path.setVisible(false);
+			this.panelEnDe.btn_open_input_file.setVisible(false);
+			this.panelEnDe.btn_open_input_folder.setVisible(false);
+			this.panelEnDe.btn_open_output_file.setVisible(false);
+		} else if (ICryptoAlgorithm.isFileEncryption(this.model.algorithmType)) {
+			this.panelGenLoadKey.lbl_fileKey.setVisible(true);
+			this.panelGenLoadKey.btn_open_file.setVisible(true);
+			this.panelGenLoadKey.tf_file_path.setVisible(true);
+
+			this.panelEnDe.rdo_file.setVisible(true);
+			this.panelEnDe.rdo_file.setSelected(true);
+			this.panelEnDe.btn_open_input_file.setVisible(true);
+			this.panelEnDe.btn_open_input_folder.setVisible(true);
+			this.panelEnDe.btn_open_output_file.setVisible(true);
+			this.panelEnDe.tf_input.setText("");
+			this.panelEnDe.tf_output.setText("");
+		} else {
+			this.panelGenLoadKey.lbl_fileKey.setVisible(false);
+			this.panelGenLoadKey.btn_open_file.setVisible(false);
+			this.panelGenLoadKey.tf_file_path.setVisible(false);
+			this.panelEnDe.btn_open_input_file.setVisible(false);
+			this.panelEnDe.btn_open_input_folder.setVisible(false);
+			this.panelEnDe.btn_open_output_file.setVisible(false);
+
+			this.panelEnDe.rdo_file.setVisible(false);
+			this.panelEnDe.rdo_text.setSelected(true);
+		}
+	}
+
+	private void encrypt() {
+		if (this.model.algorithm == null) {
+			JOptionPane.showMessageDialog(panelEnDe, "Key has not been initialized!", "Warning",
+					JOptionPane.WARNING_MESSAGE);
+		} else {
+			boolean isEnFile = panelEnDe.rdo_file.isSelected();
+			String input = panelEnDe.tf_input.getText();
+			String output = panelEnDe.tf_output.getText();
+			System.out.println("1");
+			if (isEnFile) {
+				System.out.println("2");
+				if (input.isEmpty() || output.isEmpty())
+					JOptionPane.showMessageDialog(panelEnDe, "File or folder is empty!", "Warning",
+							JOptionPane.WARNING_MESSAGE);
+
+				File inputFile = new File(input);
+				File outputFile = new File(output);
+				if (!inputFile.exists()) {
+					JOptionPane.showMessageDialog(panelEnDe, "Input file or folder is not exist!", "Warning",
+							JOptionPane.WARNING_MESSAGE);
+				} else {
+					if (inputFile.isDirectory()) {
+						outputFile.mkdir();
+						if (outputFile.isDirectory()) {
+							for (File f : inputFile.listFiles()) {
+								try {
+									if (f.isFile())
+										this.model.algorithm.encryptFile(f.getAbsolutePath(),
+												output + "/" + f.getName());
+									else if (f.isDirectory())
+										this.model.algorithm.encryptFolder(f.getAbsolutePath(),
+												output + "/" + f.getName());
+								} catch (Exception e1) {
+									e1.printStackTrace();
+									JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
+											"Failure Notification", JOptionPane.ERROR_MESSAGE);
+								}
+							}
+							JOptionPane.showMessageDialog(panelEnDe, "Encryption is successs!", "Success",
+									JOptionPane.INFORMATION_MESSAGE);
+						}
+					} else if (inputFile.isFile()) {
+						System.out.println("3");
+						try {
+							this.model.algorithm.encryptFile(input, output);
+							JOptionPane.showMessageDialog(panelEnDe, "Encryption is successs!", "Success",
+									JOptionPane.INFORMATION_MESSAGE);
+						} catch (Exception e1) {
+							e1.printStackTrace();
+							JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
+									"Failure Notification", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
+
+			} else {
+				if (input.isEmpty())
+					JOptionPane.showMessageDialog(panelEnDe, "Text is empty!", "Warning", JOptionPane.WARNING_MESSAGE);
+				else
+					try {
+						byte[] out = this.model.algorithm.encrypt(input);
+						this.panelEnDe.tf_output.setText(Base64.getEncoder().encodeToString(out));
+					} catch (Exception e1) {
+						e1.printStackTrace();
+						JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
+								"Failure Notification", JOptionPane.ERROR_MESSAGE);
+					}
+			}
+		}
+	}
+
+	private void decrypt() {
+
+		if (this.model.algorithm == null) {
+			JOptionPane.showMessageDialog(panelEnDe, "Key has not been initialized!", "Warning",
+					JOptionPane.WARNING_MESSAGE);
+		} else {
+			boolean isDeFile = panelEnDe.rdo_file.isSelected();
+			String input = panelEnDe.tf_input.getText();
+			String output = panelEnDe.tf_output.getText();
+
+			if (isDeFile) {
+				if (input.isEmpty() || output.isEmpty())
+					JOptionPane.showMessageDialog(panelEnDe, "File or folder is empty!", "Warning",
+							JOptionPane.WARNING_MESSAGE);
+				File inputFile = new File(input);
+				File outputFile = new File(output);
+				if (!inputFile.exists()) {
+					JOptionPane.showMessageDialog(panelEnDe, "Input file or folder is not exist!", "Warning",
+							JOptionPane.WARNING_MESSAGE);
+				} else {
+					if (inputFile.isDirectory()) {
+						outputFile.mkdir();
+						if (outputFile.isDirectory()) {
+							for (File f : inputFile.listFiles()) {
+								try {
+									if (f.isFile())
+										this.model.algorithm.decryptFile(f.getAbsolutePath(),
+												output + "/" + f.getName());
+									else if (f.isDirectory())
+										this.model.algorithm.decryptFolder(f.getAbsolutePath(),
+												output + "/" + f.getName());
+								} catch (Exception e1) {
+									e1.printStackTrace();
+									JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
+											"Failure Notification", JOptionPane.ERROR_MESSAGE);
+								}
+							}
+							JOptionPane.showMessageDialog(panelEnDe, "Decryption is successs!", "Success",
+									JOptionPane.INFORMATION_MESSAGE);
+						}
+					} else if (inputFile.isFile()) {
+						try {
+							this.model.algorithm.decryptFile(input, output);
+							JOptionPane.showMessageDialog(panelEnDe, "Decryption is successs!", "Success",
+									JOptionPane.INFORMATION_MESSAGE);
+						} catch (Exception e1) {
+							e1.printStackTrace();
+							JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
+									"Failure Notification", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
+			} else {
+				if (input.isEmpty())
+					JOptionPane.showMessageDialog(panelEnDe, "Text is empty!", "Warning", JOptionPane.WARNING_MESSAGE);
+				else
+					try {
+						String out = this.model.algorithm.decrypt(Base64.getDecoder().decode(input));
+						this.panelEnDe.tf_output.setText(out);
+					} catch (Exception e1) {
+						e1.printStackTrace();
+						JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
+								"Failure Notification", JOptionPane.ERROR_MESSAGE);
+					}
+			}
+		}
+	}
+
 	private void loadBasicSymmetricAlgorithms() {
 		this.panelSelectAlgorithms.cbb_algorithm.removeAllItems();
 		for (EAlgorithmType type : this.model.basicSymmetricAlgorithmTypes) {
@@ -642,224 +863,6 @@ public class Controller implements ActionListener {
 		return null;
 	}
 
-	private void switchLoadUI() {
-		SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-			@Override
-			protected Void doInBackground() throws Exception {
-				// Hiển thị progress bar trước khi bắt đầu công việc nặng
-				SwingUtilities.invokeLater(() -> progressBar.setVisible(true));
-
-				panelGenLoadKey.tf_file_path.setText("");
-				if (!isSelectBasic && panelSelectAlgorithms.rdb_basic_symmetric.isSelected()) {
-					isSelectBasic = true;
-					isSelectModern = false;
-					isSelectAsymmetric = false;
-					isSelectBouncyCastle = false;
-					loadBasicSymmetricAlgorithms();
-				} else if (!isSelectModern && panelSelectAlgorithms.rdb_modern_symmetric.isSelected()) {
-					loadMordernSymmetricAlgorithms();
-					isSelectBasic = false;
-					isSelectModern = true;
-					isSelectAsymmetric = false;
-					isSelectBouncyCastle = false;
-				} else if (!isSelectAsymmetric && panelSelectAlgorithms.rdb_asymmetric.isSelected()) {
-					loadAsymmetricAlgorithms();
-					isSelectBasic = false;
-					isSelectModern = false;
-					isSelectAsymmetric = true;
-					isSelectBouncyCastle = false;
-				} else if (!isSelectBouncyCastle
-						&& panelSelectAlgorithms.rdb_modern_symmetric_bouncy_castle.isSelected()) {
-					loadBouncyCastleSymmetricAlgorithms();
-					isSelectBasic = false;
-					isSelectModern = false;
-					isSelectAsymmetric = false;
-					isSelectBouncyCastle = true;
-				}
-				return null;
-			}
-
-			@Override
-			protected void done() {
-				// Ẩn progress bar sau khi công việc kết thúc
-				progressBar.setVisible(false);
-			}
-		};
-		worker.execute();
-	}
-
-	private void resetUIForAlgorithm() {
-		if (this.panelEnDe.rdo_text.isSelected()) {
-			this.panelGenLoadKey.lbl_fileKey.setVisible(false);
-			this.panelGenLoadKey.btn_open_file.setVisible(false);
-			this.panelGenLoadKey.tf_file_path.setVisible(false);
-			this.panelEnDe.btn_open_input_file.setVisible(false);
-			this.panelEnDe.btn_open_input_folder.setVisible(false);
-			this.panelEnDe.btn_open_output_file.setVisible(false);
-		} else if (ICryptoAlgorithm.isFileEncryption(this.model.algorithmType)) {
-			this.panelGenLoadKey.lbl_fileKey.setVisible(true);
-			this.panelGenLoadKey.btn_open_file.setVisible(true);
-			this.panelGenLoadKey.tf_file_path.setVisible(true);
-
-			this.panelEnDe.rdo_file.setVisible(true);
-			this.panelEnDe.rdo_file.setSelected(true);
-			this.panelEnDe.btn_open_input_file.setVisible(true);
-			this.panelEnDe.btn_open_input_folder.setVisible(true);
-			this.panelEnDe.btn_open_output_file.setVisible(true);
-			this.panelEnDe.tf_input.setText("");
-			this.panelEnDe.tf_output.setText("");
-		} else {
-			this.panelGenLoadKey.lbl_fileKey.setVisible(false);
-			this.panelGenLoadKey.btn_open_file.setVisible(false);
-			this.panelGenLoadKey.tf_file_path.setVisible(false);
-			this.panelEnDe.btn_open_input_file.setVisible(false);
-			this.panelEnDe.btn_open_input_folder.setVisible(false);
-			this.panelEnDe.btn_open_output_file.setVisible(false);
-
-			this.panelEnDe.rdo_file.setVisible(false);
-			this.panelEnDe.rdo_text.setSelected(true);
-		}
-	}
-
-	private void encrypt() {
-		if (this.model.algorithm == null) {
-			JOptionPane.showMessageDialog(panelEnDe, "Algorithm not initialized!", "Warning",
-					JOptionPane.WARNING_MESSAGE);
-		} else {
-			boolean isEnFile = panelEnDe.rdo_file.isSelected();
-			String input = panelEnDe.tf_input.getText();
-			String output = panelEnDe.tf_output.getText();
-			System.out.println("1");
-			if (isEnFile) {
-				System.out.println("2");
-				if (input.isEmpty() || output.isEmpty())
-					JOptionPane.showMessageDialog(panelEnDe, "File or folder is empty!", "Warning",
-							JOptionPane.WARNING_MESSAGE);
-
-				File inputFile = new File(input);
-				File outputFile = new File(output);
-				if (!inputFile.exists()) {
-					JOptionPane.showMessageDialog(panelEnDe, "Input file or folder is not exist!", "Warning",
-							JOptionPane.WARNING_MESSAGE);
-				} else {
-					if (inputFile.isDirectory()) {
-						outputFile.mkdir();
-						if (outputFile.isDirectory()) {
-							for (File f : inputFile.listFiles()) {
-								try {
-									if (f.isFile())
-										this.model.algorithm.encryptFile(f.getAbsolutePath(),
-												output + "/" + f.getName());
-									else if (f.isDirectory())
-										this.model.algorithm.encryptFolder(f.getAbsolutePath(),
-												output + "/" + f.getName());
-								} catch (Exception e1) {
-									e1.printStackTrace();
-									JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
-											"Failure Notification", JOptionPane.ERROR_MESSAGE);
-								}
-							}
-							JOptionPane.showMessageDialog(panelEnDe, "Encryption key is successs!", "Success",
-									JOptionPane.INFORMATION_MESSAGE);
-						}
-					} else if (inputFile.isFile()) {
-						System.out.println("3");
-						try {
-							this.model.algorithm.encryptFile(input, output);
-							JOptionPane.showMessageDialog(panelEnDe, "Encryption key is successs!", "Success",
-									JOptionPane.INFORMATION_MESSAGE);
-						} catch (Exception e1) {
-							e1.printStackTrace();
-							JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
-									"Failure Notification", JOptionPane.ERROR_MESSAGE);
-						}
-					}
-				}
-
-			} else {
-				if (input.isEmpty())
-					JOptionPane.showMessageDialog(panelEnDe, "Text is empty!", "Warning", JOptionPane.WARNING_MESSAGE);
-				else
-					try {
-						byte[] out = this.model.algorithm.encrypt(input);
-						this.panelEnDe.tf_output.setText(Base64.getEncoder().encodeToString(out));
-					} catch (Exception e1) {
-						e1.printStackTrace();
-						JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
-								"Failure Notification", JOptionPane.ERROR_MESSAGE);
-					}
-			}
-		}
-	}
-
-	private void decrypt() {
-
-		if (this.model.algorithm == null) {
-			JOptionPane.showMessageDialog(panelEnDe, "Algorithm not initialized!", "Warning",
-					JOptionPane.WARNING_MESSAGE);
-		} else {
-			boolean isDeFile = panelEnDe.rdo_file.isSelected();
-			String input = panelEnDe.tf_input.getText();
-			String output = panelEnDe.tf_output.getText();
-
-			if (isDeFile) {
-				if (input.isEmpty() || output.isEmpty())
-					JOptionPane.showMessageDialog(panelEnDe, "File or folder is empty!", "Warning",
-							JOptionPane.WARNING_MESSAGE);
-				File inputFile = new File(input);
-				File outputFile = new File(output);
-				if (!inputFile.exists()) {
-					JOptionPane.showMessageDialog(panelEnDe, "Input file or folder is not exist!", "Warning",
-							JOptionPane.WARNING_MESSAGE);
-				} else {
-					if (inputFile.isDirectory()) {
-						outputFile.mkdir();
-						if (outputFile.isDirectory()) {
-							for (File f : inputFile.listFiles()) {
-								try {
-									if (f.isFile())
-										this.model.algorithm.decryptFile(f.getAbsolutePath(),
-												output + "/" + f.getName());
-									else if (f.isDirectory())
-										this.model.algorithm.decryptFolder(f.getAbsolutePath(),
-												output + "/" + f.getName());
-								} catch (Exception e1) {
-									e1.printStackTrace();
-									JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
-											"Failure Notification", JOptionPane.ERROR_MESSAGE);
-								}
-							}
-							JOptionPane.showMessageDialog(panelEnDe, "Encryption key is successs!", "Success",
-									JOptionPane.INFORMATION_MESSAGE);
-						}
-					} else if (inputFile.isFile()) {
-						try {
-							this.model.algorithm.decryptFile(input, output);
-							JOptionPane.showMessageDialog(panelEnDe, "Encryption key is successs!", "Success",
-									JOptionPane.INFORMATION_MESSAGE);
-						} catch (Exception e1) {
-							e1.printStackTrace();
-							JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
-									"Failure Notification", JOptionPane.ERROR_MESSAGE);
-						}
-					}
-				}
-			} else {
-				if (input.isEmpty())
-					JOptionPane.showMessageDialog(panelEnDe, "Text is empty!", "Warning", JOptionPane.WARNING_MESSAGE);
-				else
-					try {
-						String out = this.model.algorithm.decrypt(Base64.getDecoder().decode(input));
-						this.panelEnDe.tf_output.setText(out);
-					} catch (Exception e1) {
-						e1.printStackTrace();
-						JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
-								"Failure Notification", JOptionPane.ERROR_MESSAGE);
-					}
-			}
-		}
-	}
-
 	private void loadHashAlgorithms() {
 		for (EHashAlgorithm type : this.model.hashAlgorithms) {
 			panelCheckFile.cbb_type.addItem(type.getHashAlgorithm());
@@ -869,4 +872,5 @@ public class Controller implements ActionListener {
 			isLoadHash = true;
 		}
 	}
+
 }

@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 public class BouncyCastleSymmetricEncryption implements ICryptoAlgorithm {
 	private SecureRandom secureRandom = new SecureRandom();
@@ -35,11 +36,6 @@ public class BouncyCastleSymmetricEncryption implements ICryptoAlgorithm {
 	private EPadding padding;
 	private byte[] key;
 
-//	public BouncyCastleSymmetricEncryption(EAlgorithmType algorithmType, EKeySize keySize) {
-//		this.algorithmType = algorithmType;
-//		this.keySize = keySize;
-//	}
-
 	public BouncyCastleSymmetricEncryption(EAlgorithmType algorithmType, EKeySize keySize, EModes mode,
 			EPadding padding) {
 		this.algorithmType = algorithmType;
@@ -48,14 +44,12 @@ public class BouncyCastleSymmetricEncryption implements ICryptoAlgorithm {
 		this.padding = padding;
 	}
 
-	// Mã hóa dữ liệu
 	@Override
 	public byte[] encrypt(String text) throws Exception {
 		byte[] data = text.getBytes(StandardCharsets.UTF_8);
 		return encryptData(data);
 	}
 
-	// Giải mã dữ liệu
 	@Override
 	public String decrypt(byte[] data) throws Exception {
 		byte[] decryptedData = decryptData(data);
@@ -94,36 +88,36 @@ public class BouncyCastleSymmetricEncryption implements ICryptoAlgorithm {
 	}
 
 	private byte[] decryptData(byte[] data) throws Exception {
-	    org.bouncycastle.crypto.BlockCipher baseCipher = getCipherInstance();
-	    BlockCipher blockCipher = wrapCipherWithMode(baseCipher);
-	    PaddedBufferedBlockCipher cipher = wrapCipherWithPadding(blockCipher);
+		org.bouncycastle.crypto.BlockCipher baseCipher = getCipherInstance();
+		BlockCipher blockCipher = wrapCipherWithMode(baseCipher);
+		PaddedBufferedBlockCipher cipher = wrapCipherWithPadding(blockCipher);
 
-	    byte[] iv = null;
-	    byte[] ciphertext = null;
+		byte[] iv = null;
+		byte[] ciphertext = null;
 
-	    if (EAlgorithmType.requiresIV(mode, algorithmType)) {
-	        int blocksize = this.algorithmType.getIvLength();
-	        iv = new byte[blocksize];
-	        System.arraycopy(data, 0, iv, 0, iv.length);
+		if (EAlgorithmType.requiresIV(mode, algorithmType)) {
+			int blocksize = this.algorithmType.getIvLength();
+			iv = new byte[blocksize];
+			System.arraycopy(data, 0, iv, 0, iv.length);
 
-	        // Tách ciphertext từ data
-	        ciphertext = new byte[data.length - iv.length];
-	        System.arraycopy(data, iv.length, ciphertext, 0, ciphertext.length);
+			// Tách ciphertext từ data
+			ciphertext = new byte[data.length - iv.length];
+			System.arraycopy(data, iv.length, ciphertext, 0, ciphertext.length);
 
-	        cipher.init(false, new ParametersWithIV(new KeyParameter(key), iv));
-	    } else {
-	        cipher.init(false, new KeyParameter(key));
-	        ciphertext = data;
-	    }
+			cipher.init(false, new ParametersWithIV(new KeyParameter(key), iv));
+		} else {
+			cipher.init(false, new KeyParameter(key));
+			ciphertext = data;
+		}
 
-	    // Giải mã ciphertext
-	    byte[] output = new byte[cipher.getOutputSize(ciphertext.length)];
-	    int outputLength = cipher.processBytes(ciphertext, 0, ciphertext.length, output, 0);
-	    cipher.doFinal(output, outputLength);
+		// Giải mã ciphertext
+		byte[] output = new byte[cipher.getOutputSize(ciphertext.length)];
+		int outputLength = cipher.processBytes(ciphertext, 0, ciphertext.length, output, 0);
+		outputLength += cipher.doFinal(output, outputLength);
 
-	    return output;
+		// Chỉ trả về phần dữ liệu hợp lệ, bỏ qua padding
+		return Arrays.copyOfRange(output, 0, outputLength);
 	}
-
 
 	private BlockCipher wrapCipherWithMode(org.bouncycastle.crypto.BlockCipher cipher) throws Exception {
 		int blockSize = cipher.getBlockSize() * 8;
@@ -205,31 +199,30 @@ public class BouncyCastleSymmetricEncryption implements ICryptoAlgorithm {
 
 	@Override
 	public boolean decryptFile(String srcFilePath, String desFilePath) throws Exception {
-		// Read the encrypted file
+		// Đọc dữ liệu mã hóa từ file
 		byte[] encryptedData = Files.readAllBytes(Paths.get(srcFilePath));
 
-		// Extract the IV from the beginning of the encrypted data
+		// Tách IV
 		int blocksize = this.algorithmType.getIvLength();
 		byte[] iv = new byte[blocksize];
 		System.arraycopy(encryptedData, 0, iv, 0, iv.length);
 
-		// The remaining data is the ciphertext
+		// Dữ liệu còn lại là ciphertext
 		byte[] ciphertext = new byte[encryptedData.length - iv.length];
 		System.arraycopy(encryptedData, iv.length, ciphertext, 0, ciphertext.length);
 
-		// Get the cipher instance and initialize it for decryption
+		// Giải mã
 		org.bouncycastle.crypto.BlockCipher cipher = getCipherInstance();
 		PaddedBufferedBlockCipher cipherInstance = new PaddedBufferedBlockCipher(new CBCBlockCipher(cipher));
 		cipherInstance.init(false, new ParametersWithIV(new KeyParameter(key), iv));
 
-		// Decrypt the ciphertext
 		byte[] decryptedData = new byte[cipherInstance.getOutputSize(ciphertext.length)];
 		int outputLength = cipherInstance.processBytes(ciphertext, 0, ciphertext.length, decryptedData, 0);
-		cipherInstance.doFinal(decryptedData, outputLength);
+		outputLength += cipherInstance.doFinal(decryptedData, outputLength);
 
-		// Write the decrypted data to the output file
+		// Ghi dữ liệu giải mã vào file
 		try (FileOutputStream fos = new FileOutputStream(desFilePath)) {
-			fos.write(decryptedData);
+			fos.write(decryptedData, 0, outputLength); // Chỉ ghi dữ liệu hợp lệ
 			return true;
 		} catch (IOException e) {
 			throw new Exception("Error writing decrypted data to file: " + e.getMessage(), e);
@@ -306,10 +299,7 @@ public class BouncyCastleSymmetricEncryption implements ICryptoAlgorithm {
 			// thước khóa
 			EAlgorithmType[] types = new EAlgorithmType[] { EAlgorithmType.Twofish, EAlgorithmType.Serpent,
 					EAlgorithmType.CAST, EAlgorithmType.Camellia };
-			EModes[] modes = new EModes[] {
-					EModes.ECB, EModes.CBC, EModes.CFB, EModes.OFB,
-					EModes.CTR 
-			};
+			EModes[] modes = new EModes[] { EModes.ECB, EModes.CBC, EModes.CFB, EModes.OFB, EModes.CTR };
 			EPadding[] paddings = new EPadding[] { EPadding.PKCS7Padding, EPadding.ISO10126Padding,
 					EPadding.ZeroPadding };
 

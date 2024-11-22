@@ -5,10 +5,12 @@ import java.util.List;
 
 public enum EPadding {
 	// Java hỗ trợ
-	PKCS5Padding("PKCS5Padding"), PKCS1Padding("PKCS1Padding"), NoPadding("NoPadding"),
-	ISO10126Padding("ISO10126Padding"),
+	NoPadding("NoPadding"), PKCS5Padding("PKCS5Padding"),
+	// RSA
+	PKCS1Padding("PKCS1Padding"), OAEPWithSHA1AndMGF1Padding("OAEPWithSHA-1AndMGF1Padding"),
+	OAEPWithSHA256AndMGF1Padding("OAEPWithSHA-256AndMGF1Padding"),
 	// Java không hỗ trợ
-	PKCS7Padding("PKCS7Padding"), ZeroPadding("ZeroBytePadding");
+	PKCS7Padding("PKCS7Padding"), ZeroPadding("ZeroBytePadding"), ISO10126Padding("ISO10126Padding"),;
 
 	private final String paddingName;
 
@@ -45,7 +47,7 @@ public enum EPadding {
 				paddings.add(EPadding.NoPadding);
 			} else if (mode == EModes.ECB || mode == EModes.CBC || mode == EModes.CFB || mode == EModes.OFB) {
 				paddings.add(EPadding.PKCS5Padding);
-				paddings.add(EPadding.ISO10126Padding);
+				paddings.add(EPadding.NoPadding);
 			}
 			break;
 		case Twofish:
@@ -59,6 +61,8 @@ public enum EPadding {
 		case RSA:
 		case RSA_AES:
 			paddings.add(EPadding.PKCS1Padding);
+			paddings.add(EPadding.OAEPWithSHA1AndMGF1Padding);
+			paddings.add(EPadding.OAEPWithSHA256AndMGF1Padding);
 			break;
 
 		default:

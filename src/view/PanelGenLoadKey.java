@@ -4,13 +4,16 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.TitledBorder;
 
+import config.GlobalConstants;
 import controller.Controller;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Font;
 import javax.swing.border.EtchedBorder;
 import javax.swing.JComboBox;
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JTextField;
@@ -66,28 +69,30 @@ public class PanelGenLoadKey extends JPanel {
 		panel_north.add(panel_0, BorderLayout.CENTER);
 
 		lbl_fileKey = new JLabel("File key: ");
-		lbl_fileKey.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lbl_fileKey.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_2.add(lbl_fileKey, BorderLayout.WEST);
 
 		tf_file_path = new JTextField();
 		tf_file_path.setEditable(false);
+		tf_file_path.setFont(new Font("Tahoma", Font.PLAIN, GlobalConstants.FONT_SIZE_0));
 		panel_2.add(tf_file_path, BorderLayout.CENTER);
 		tf_file_path.setColumns(10);
 
 		btn_open_file = new JButton("Open");
-		btn_open_file.setFont(new Font("Tahoma", Font.BOLD, 12));
+		btn_open_file.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_2.add(btn_open_file, BorderLayout.EAST);
 
 		lbl_key_size = new JLabel("Key size: ");
-		lbl_key_size.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lbl_key_size.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_1.add(lbl_key_size, BorderLayout.WEST);
 
 		cbb_key_size = new JComboBox();
-		cbb_key_size.setFont(new Font("Tahoma", Font.BOLD, 20));
+		cbb_key_size.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_3));
 		panel_1.add(cbb_key_size, BorderLayout.CENTER);
 
-		btn_auto_key_genereration = new JButton("Auto key generation");
-		btn_auto_key_genereration.setFont(new Font("Tahoma", Font.BOLD, 12));
+		btn_auto_key_genereration = new JButton("Auto Key Generation");
+		btn_auto_key_genereration.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
+
 		JPanel panel = new JPanel();
 		panel.setBorder(new EmptyBorder(0, 10, 0, 0));
 		panel.setLayout(new BorderLayout(0, 0));
@@ -99,9 +104,11 @@ public class PanelGenLoadKey extends JPanel {
 
 		rdo_save_key = new JRadioButton("Save Key");
 		rdo_save_key.setSelected(true);
+		rdo_save_key.setFont(new Font("Tahoma", Font.PLAIN, GlobalConstants.FONT_SIZE_0));
 		panel_3.add(rdo_save_key);
 
 		rdo_not_save_key = new JRadioButton("Don't Save Key");
+		rdo_not_save_key.setFont(new Font("Tahoma", Font.PLAIN, GlobalConstants.FONT_SIZE_0));
 		panel_3.add(rdo_not_save_key);
 
 		ButtonGroup bg = new ButtonGroup();
@@ -118,24 +125,24 @@ public class PanelGenLoadKey extends JPanel {
 		panel_5.setLayout(new BorderLayout(0, 0));
 
 		lbl_modes = new JLabel("Modes:    ");
-		lbl_modes.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lbl_modes.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_5.add(lbl_modes, BorderLayout.WEST);
 
 		cbb_modes = new JComboBox();
-		cbb_modes.setFont(new Font("Tahoma", Font.BOLD, 20));
+		cbb_modes.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_3));
 		panel_5.add(cbb_modes, BorderLayout.CENTER);
 
 		panel_6 = new JPanel();
 		panel_6.setBorder(new EmptyBorder(0, 0, 5, 0));
 		panel_4.add(panel_6, BorderLayout.SOUTH);
 		panel_6.setLayout(new BorderLayout(0, 0));
-		
+
 		lbl_padding = new JLabel("Padding:   ");
-		lbl_padding.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lbl_padding.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_6.add(lbl_padding, BorderLayout.WEST);
-		
+
 		cbb_padding = new JComboBox();
-		cbb_padding.setFont(new Font("Tahoma", Font.BOLD, 20));
+		cbb_padding.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_3));
 		panel_6.add(cbb_padding, BorderLayout.CENTER);
 	}
 

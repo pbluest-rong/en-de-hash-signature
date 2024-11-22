@@ -98,14 +98,16 @@ public class RSA_AES implements ICryptoAlgorithm {
 	@Override
 	public byte[] encrypt(String text) throws Exception {
 		byte[] plainBytes = text.getBytes("UTF-8");
-		Cipher aesCipher = Cipher.getInstance(EAlgorithmType.AES.getCipherInstanceString(mode, padding));
+		Cipher aesCipher = Cipher
+				.getInstance(EAlgorithmType.AES.getCipherInstanceString(EModes.CBC, EPadding.PKCS5Padding));
 		aesCipher.init(Cipher.ENCRYPT_MODE, this.secretKey, iv);
 		return aesCipher.doFinal(plainBytes);
 	}
 
 	@Override
 	public String decrypt(byte[] data) throws Exception {
-		Cipher aesCipher = Cipher.getInstance(EAlgorithmType.AES.getCipherInstanceString(mode, padding));
+		Cipher aesCipher = Cipher
+				.getInstance(EAlgorithmType.AES.getCipherInstanceString(EModes.CBC, EPadding.PKCS5Padding));
 		aesCipher.init(Cipher.DECRYPT_MODE, this.secretKey, iv);
 		byte[] decryptedBytes = aesCipher.doFinal(data);
 		return new String(decryptedBytes, "UTF-8");
@@ -114,7 +116,8 @@ public class RSA_AES implements ICryptoAlgorithm {
 	@Override
 	public boolean encryptFile(String srcFilePath, String desFilePath) throws Exception {
 		// encrypt secretkey
-		Cipher aesCipher = Cipher.getInstance(EAlgorithmType.AES.getCipherInstanceString(mode, padding));
+		Cipher aesCipher = Cipher
+				.getInstance(EAlgorithmType.AES.getCipherInstanceString(EModes.CBC, EPadding.PKCS5Padding));
 		aesCipher.init(Cipher.ENCRYPT_MODE, this.secretKey, iv);
 
 		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFilePath));
@@ -172,7 +175,8 @@ public class RSA_AES implements ICryptoAlgorithm {
 			this.iv = new IvParameterSpec(ivBytes);
 
 			// Giải mã nội dung file với khóa AES
-			Cipher aesCipher = Cipher.getInstance(EAlgorithmType.AES.getCipherInstanceString(mode, padding));
+			Cipher aesCipher = Cipher
+					.getInstance(EAlgorithmType.AES.getCipherInstanceString(EModes.CBC, EPadding.PKCS5Padding));
 			aesCipher.init(Cipher.DECRYPT_MODE, this.secretKey, iv);
 
 			try (CipherInputStream cipherIn = new CipherInputStream(in, aesCipher)) {

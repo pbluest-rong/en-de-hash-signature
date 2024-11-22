@@ -19,7 +19,7 @@ public class AffineCipher extends ABasicSymmetric {
                 int newIndex = (a * index + b) % ALPHABET.length();
                 cipherText.append(ALPHABET.charAt(newIndex));
             } else {
-                cipherText.append(c); // Giữ nguyên ký tự không nằm trong ALPHABET
+                cipherText.append(c);
             }
         }
         return cipherText.toString();
@@ -38,7 +38,7 @@ public class AffineCipher extends ABasicSymmetric {
                 int newIndex = (aInverse * (index - b + ALPHABET.length())) % ALPHABET.length();
                 plainText.append(ALPHABET.charAt(newIndex));
             } else {
-                plainText.append(c); // Giữ nguyên ký tự không nằm trong ALPHABET
+                plainText.append(c);
             }
         }
         return plainText.toString();

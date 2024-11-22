@@ -10,6 +10,7 @@ import javax.swing.JPanel;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import config.GlobalConstants;
 import controller.Controller;
 
 import javax.swing.JTextField;
@@ -68,19 +69,20 @@ public class PanelEnDe extends JPanel {
 		panel.add(panel_2, BorderLayout.SOUTH);
 
 		btn_open_input_file = new JButton("Select File");
-		btn_open_input_file.setFont(new Font("Tahoma", Font.BOLD, 12));
+		btn_open_input_file.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_2.add(btn_open_input_file);
 
 		btn_open_input_folder = new JButton("Select Folder");
-		btn_open_input_folder.setFont(new Font("Tahoma", Font.BOLD, 12));
+		btn_open_input_folder.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_2.add(btn_open_input_folder);
 
 		JLabel lblNewLabel_1 = new JLabel("Input: ");
-		lblNewLabel_1.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblNewLabel_1.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel.add(lblNewLabel_1, BorderLayout.WEST);
 
 		tf_input = new JTextField();
 		tf_input.setColumns(10);
+		tf_input.setFont(new Font("Tahoma", Font.PLAIN, GlobalConstants.FONT_SIZE_0));
 		panel.add(tf_input, BorderLayout.CENTER);
 
 		JPanel panel_1 = new JPanel();
@@ -91,14 +93,15 @@ public class PanelEnDe extends JPanel {
 		panel_1.add(panel_2_1, BorderLayout.SOUTH);
 
 		btn_open_output_file = new JButton("Export To");
-		btn_open_output_file.setFont(new Font("Tahoma", Font.BOLD, 12));
+		btn_open_output_file.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_2_1.add(btn_open_output_file);
 
 		JLabel lblNewLabel_1_1 = new JLabel("Output: ");
-		lblNewLabel_1_1.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblNewLabel_1_1.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_1.add(lblNewLabel_1_1, BorderLayout.WEST);
 
 		tf_output = new JTextField();
+		tf_output.setFont(new Font("Tahoma", Font.PLAIN, GlobalConstants.FONT_SIZE_0));
 		tf_output.setColumns(10);
 		panel_1.add(tf_output, BorderLayout.CENTER);
 
@@ -106,11 +109,11 @@ public class PanelEnDe extends JPanel {
 		panel_center.add(panel_3, BorderLayout.NORTH);
 
 		rdo_text = new JRadioButton("Text");
-		rdo_text.setFont(new Font("Tahoma", Font.BOLD, 14));
+		rdo_text.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_3.add(rdo_text);
 
 		rdo_file = new JRadioButton("File");
-		rdo_file.setFont(new Font("Tahoma", Font.BOLD, 14));
+		rdo_file.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_0));
 		panel_3.add(rdo_file);
 
 		ButtonGroup bg = new ButtonGroup();
@@ -121,11 +124,11 @@ public class PanelEnDe extends JPanel {
 		panel_south.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 
 		btn_encrypt = new JButton("Encrypt");
-		btn_encrypt.setFont(new Font("Tahoma", Font.BOLD, 20));
+		btn_encrypt.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_3));
 		panel_south.add(btn_encrypt);
 
 		btn_decrypt = new JButton("Decrypt");
-		btn_decrypt.setFont(new Font("Tahoma", Font.BOLD, 20));
+		btn_decrypt.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_3));
 		panel_south.add(btn_decrypt);
 	}
 

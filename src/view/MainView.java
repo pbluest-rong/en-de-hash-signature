@@ -3,6 +3,8 @@ package view;
 import java.awt.BorderLayout;
 
 import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 
@@ -15,6 +17,7 @@ import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 
+import config.GlobalConstants;
 import controller.Controller;
 
 import java.awt.GridLayout;
@@ -23,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import javax.swing.JButton;
 import java.awt.Font;
+import javax.swing.JLabel;
 
 public class MainView extends JFrame {
 	private JPanel contentPane;
@@ -35,9 +39,9 @@ public class MainView extends JFrame {
 	public MainView() {
 		this.controller = new Controller();
 
-		setTitle("ATBMHTTT - Pblues");
+		setTitle(GlobalConstants.APP_TITLE);
 		try {
-			Image logo = ImageIO.read(new File("logo.png"));
+			Image logo = ImageIO.read(new File(GlobalConstants.LOGO_FILE_PATH));
 			setIconImage(logo);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -46,7 +50,7 @@ public class MainView extends JFrame {
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
 		setContentPane(contentPane);
-		setSize(800, 700);
+		setSize(GlobalConstants.DEFAULT_APP_WIDTH, GlobalConstants.DEFAULT_APP_HEIGHT);
 		setLocationRelativeTo(null);
 		contentPane.setLayout(new BorderLayout());
 		JPanel panelMain = new JPanel(new GridLayout(2, 1));
@@ -68,22 +72,40 @@ public class MainView extends JFrame {
 		progressBar.setStringPainted(true);
 		progressBar.setVisible(false);
 
-		progressPanel.add(progressBar);
+		progressPanel.add(progressBar, BorderLayout.CENTER);
 		progressPanel.setPreferredSize(new Dimension(contentPane.getWidth(), 20));
 		contentPane.add(progressPanel, BorderLayout.NORTH);
 		this.controller.setProgressBar(progressBar);
 
+		JButton pdfButton = new JButton("Guide");
+		pdfButton.setBorderPainted(false);
+		pdfButton.setOpaque(true);
+		pdfButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		pdfButton.setBackground(new Color(255, 223, 0));
+		pdfButton.setForeground(Color.BLACK);
+		pdfButton.setFont(new Font("Arial", Font.BOLD, 14)); // Bold font
+		pdfButton.setFocusPainted(false);
+		pdfButton.addActionListener(e -> {
+			try {
+				Desktop.getDesktop().open(new File(GlobalConstants.GUIDE_FILE_PATH));
+			} catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		});
+
+		progressPanel.add(pdfButton, BorderLayout.EAST);
+
 		btn_signature = new JButton("Signature");
-		btn_signature.setFont(new Font("Tahoma", Font.BOLD, 12));
+		btn_signature.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_3));
 		btn_signature.addActionListener(e -> {
 			EventQueue.invokeLater(new Runnable() {
 				public void run() {
 					try {
 						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 						JFrame frame = new JFrame("Signature Application");
-						frame.setSize(800, 700);
+						frame.setSize(GlobalConstants.DEFAULT_APP_WIDTH, GlobalConstants.DEFAULT_APP_HEIGHT);
 						frame.setLocationRelativeTo(null);
-						frame.add(new PanelSignature());
+						frame.getContentPane().add(new PanelSignature());
 						frame.setVisible(true);
 					} catch (Exception e) {
 						e.printStackTrace();
