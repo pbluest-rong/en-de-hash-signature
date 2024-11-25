@@ -23,10 +23,17 @@ import controller.Controller;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import java.awt.Font;
 import javax.swing.JLabel;
+import javax.swing.JTextField;
 
 public class MainView extends JFrame {
 	private JPanel contentPane;
@@ -41,11 +48,18 @@ public class MainView extends JFrame {
 
 		setTitle(GlobalConstants.APP_TITLE);
 		try {
-			Image logo = ImageIO.read(new File(GlobalConstants.LOGO_FILE_PATH));
-			setIconImage(logo);
-		} catch (IOException e) {
-			e.printStackTrace();
+			ImageIcon logo = new ImageIcon(getClass().getClassLoader().getResource(GlobalConstants.LOGO_FILE_PATH));
+			setIconImage(logo.getImage());
+		} catch (Exception e) {
+			try {
+				Image logo = ImageIO.read(new File(GlobalConstants.LOGO_FILE_PATH));
+				setIconImage(logo);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+
 		}
+
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -86,8 +100,29 @@ public class MainView extends JFrame {
 		pdfButton.setFont(new Font("Arial", Font.BOLD, 14)); // Bold font
 		pdfButton.setFocusPainted(false);
 		pdfButton.addActionListener(e -> {
-			try {
-				Desktop.getDesktop().open(new File(GlobalConstants.GUIDE_FILE_PATH));
+			try (InputStream input = getClass().getClassLoader().getResourceAsStream(GlobalConstants.GUIDE_FILE_PATH)) {
+				if (input == null) {
+					try {
+						Desktop.getDesktop().open(new File(GlobalConstants.GUIDE_FILE_PATH));
+					} catch (IOException e2) {
+						e2.printStackTrace();
+					}
+					return;
+				}
+				// Tạo file tạm
+				File tempFile = File.createTempFile("guide", ".pdf");
+				tempFile.deleteOnExit();
+
+				// Ghi nội dung từ InputStream vào file tạm
+				try (OutputStream out = new FileOutputStream(tempFile)) {
+					byte[] buffer = new byte[1024];
+					int bytesRead;
+					while ((bytesRead = input.read(buffer)) != -1) {
+						out.write(buffer, 0, bytesRead);
+					}
+				}
+				System.out.println("Temp file path: " + tempFile.getAbsolutePath());
+				Desktop.getDesktop().open(tempFile);
 			} catch (IOException ex) {
 				ex.printStackTrace();
 			}

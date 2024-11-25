@@ -53,12 +53,12 @@ public class PanelSelectAlgorithms extends JPanel {
 		rdb_basic_symmetric.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_2));
 		panel.add(rdb_basic_symmetric);
 
-		rdb_modern_symmetric = new JRadioButton("Modern Symmetric");
+		rdb_modern_symmetric = new JRadioButton("Modern Symmetric (Java Support)");
 		rdb_modern_symmetric.setCursor(new Cursor(Cursor.HAND_CURSOR));
 		rdb_modern_symmetric.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_2));
 		panel.add(rdb_modern_symmetric);
 
-		rdb_modern_symmetric_bouncy_castle = new JRadioButton("Bouncy Castle");
+		rdb_modern_symmetric_bouncy_castle = new JRadioButton("Modern Symmetric (Bouncy Castle)");
 		rdb_modern_symmetric_bouncy_castle.setCursor(new Cursor(Cursor.HAND_CURSOR));
 		rdb_modern_symmetric_bouncy_castle.setFont(new Font("Tahoma", Font.BOLD, GlobalConstants.FONT_SIZE_2));
 		panel.add(rdb_modern_symmetric_bouncy_castle);

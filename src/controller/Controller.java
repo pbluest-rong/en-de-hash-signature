@@ -43,7 +43,7 @@ public class Controller implements ActionListener {
 	public MainModel model;
 	public JProgressBar progressBar;
 
-	private boolean isSelectBasic = false;
+	private boolean isSelectBasic = true;
 	private boolean isSelectModern = false;
 	private boolean isSelectAsymmetric = false;
 	private boolean isSelectBouncyCastle = false;
@@ -82,15 +82,12 @@ public class Controller implements ActionListener {
 					@Override
 					protected Void doInBackground() throws Exception {
 						SwingUtilities.invokeLater(() -> progressBar.setVisible(true));
-						resetUIForAlgorithm();
-						
-						panelGenLoadKey.cbb_key_size.removeAllItems();
-						panelGenLoadKey.cbb_modes.removeAllItems();
-						panelGenLoadKey.cbb_padding.removeAllItems();
-						
+
 						model.algorithmType = EAlgorithmType
 								.get(panelSelectAlgorithms.cbb_algorithm.getSelectedItem().toString());
 
+						resetUIForAlgorithm();
+						System.out.println("HUHUHUHU: " + model.algorithmType);
 						if (ICryptoAlgorithm.isBasicSymmetric(model.algorithmType)) {
 							panelGenLoadKey.lbl_key_size.setVisible(false);
 							panelGenLoadKey.lbl_modes.setVisible(false);
@@ -98,6 +95,16 @@ public class Controller implements ActionListener {
 							panelGenLoadKey.cbb_modes.setVisible(false);
 							panelGenLoadKey.cbb_padding.setVisible(false);
 							panelGenLoadKey.lbl_padding.setVisible(false);
+						} else if (model.algorithmType.isStreamCipher()) {
+							panelGenLoadKey.lbl_modes.setVisible(false);
+							panelGenLoadKey.cbb_modes.setVisible(false);
+							panelGenLoadKey.cbb_padding.setVisible(false);
+							panelGenLoadKey.lbl_padding.setVisible(false);
+							loadKeySize(model.algorithmType);
+							if (model.algorithmType != null) {
+								if (panelGenLoadKey.cbb_key_size.getItemCount() > 0)
+									panelGenLoadKey.cbb_key_size.setSelectedIndex(0);
+							}
 						} else {
 							panelGenLoadKey.lbl_key_size.setVisible(true);
 							panelGenLoadKey.lbl_modes.setVisible(true);
@@ -108,17 +115,19 @@ public class Controller implements ActionListener {
 
 							loadKeySize(model.algorithmType);
 							loadModes(model.getModes());
+							if (model.algorithmType != null) {
+								if (panelGenLoadKey.cbb_key_size.getItemCount() > 0)
+									panelGenLoadKey.cbb_key_size.setSelectedIndex(0);
+							}
 						}
-						if (model.algorithmType != null) {
-							if (panelGenLoadKey.cbb_key_size.getItemCount() > 0)
-								panelGenLoadKey.cbb_key_size.setSelectedIndex(0);
-						}
+
 						return null;
 					}
 
 					@Override
 					protected void done() {
-						progressBar.setVisible(false);
+						if (ICryptoAlgorithm.isBasicSymmetric(model.algorithmType))
+							progressBar.setVisible(false);
 					}
 				};
 				worker.execute();
@@ -347,6 +356,8 @@ public class Controller implements ActionListener {
 
 				@Override
 				protected void done() {
+
+					System.out.println("2");
 					progressBar.setVisible(false);
 				}
 			};
@@ -363,6 +374,8 @@ public class Controller implements ActionListener {
 
 				@Override
 				protected void done() {
+
+					System.out.println("3");
 					progressBar.setVisible(false);
 				}
 			};
@@ -372,7 +385,7 @@ public class Controller implements ActionListener {
 		else if (e.getSource() == panelCheckFile.btn_hash_text) {
 			String text = panelCheckFile.tf_input_text.getText();
 			if (text.isEmpty()) {
-				JOptionPane.showMessageDialog(panelEnDe, "Text is empty!", "Warning", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(panelCheckFile, "Text is empty!", "Warning", JOptionPane.WARNING_MESSAGE);
 			} else {
 				try {
 					String ht = this.model.hash.hash(text);
@@ -434,6 +447,8 @@ public class Controller implements ActionListener {
 
 				@Override
 				protected void done() {
+
+					System.out.println("4");
 					progressBar.setVisible(false);
 				}
 			};
@@ -490,6 +505,8 @@ public class Controller implements ActionListener {
 
 				@Override
 				protected void done() {
+
+					System.out.println("5");
 					progressBar.setVisible(false);
 				}
 			};
@@ -554,6 +571,8 @@ public class Controller implements ActionListener {
 
 						@Override
 						protected void done() {
+
+							System.out.println("6");
 							progressBar.setVisible(false);
 						}
 					};
@@ -564,63 +583,41 @@ public class Controller implements ActionListener {
 	}
 
 	private void switchLoadUI() {
-		SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-			@Override
-			protected Void doInBackground() throws Exception {
-				SwingUtilities.invokeLater(() -> progressBar.setVisible(true));
-				panelGenLoadKey.tf_file_path.setText("");
-				if (!isSelectBasic && panelSelectAlgorithms.rdb_basic_symmetric.isSelected()) {
-					isSelectBasic = true;
-					isSelectModern = false;
-					isSelectAsymmetric = false;
-					isSelectBouncyCastle = false;
-					loadBasicSymmetricAlgorithms();
-				} else if (!isSelectModern && panelSelectAlgorithms.rdb_modern_symmetric.isSelected()) {
-					loadMordernSymmetricAlgorithms();
-					isSelectBasic = false;
-					isSelectModern = true;
-					isSelectAsymmetric = false;
-					isSelectBouncyCastle = false;
-				} else if (!isSelectAsymmetric && panelSelectAlgorithms.rdb_asymmetric.isSelected()) {
-					loadAsymmetricAlgorithms();
-					isSelectBasic = false;
-					isSelectModern = false;
-					isSelectAsymmetric = true;
-					isSelectBouncyCastle = false;
-				} else if (!isSelectBouncyCastle
-						&& panelSelectAlgorithms.rdb_modern_symmetric_bouncy_castle.isSelected()) {
-					loadBouncyCastleSymmetricAlgorithms();
-					isSelectBasic = false;
-					isSelectModern = false;
-					isSelectAsymmetric = false;
-					isSelectBouncyCastle = true;
-				}
-				return null;
-			}
-
-			@Override
-			protected void done() {
-				// Ẩn progress bar sau khi công việc kết thúc
-				progressBar.setVisible(false);
-			}
-		};
-		worker.execute();
+		if (!isSelectBasic && panelSelectAlgorithms.rdb_basic_symmetric.isSelected()) {
+			panelGenLoadKey.tf_file_path.setText("");
+			isSelectBasic = true;
+			isSelectModern = false;
+			isSelectAsymmetric = false;
+			isSelectBouncyCastle = false;
+			loadBasicSymmetricAlgorithms();
+		} else if (!isSelectModern && panelSelectAlgorithms.rdb_modern_symmetric.isSelected()) {
+			panelGenLoadKey.tf_file_path.setText("");
+			loadMordernSymmetricAlgorithms();
+			isSelectBasic = false;
+			isSelectModern = true;
+			isSelectAsymmetric = false;
+			isSelectBouncyCastle = false;
+		} else if (!isSelectAsymmetric && panelSelectAlgorithms.rdb_asymmetric.isSelected()) {
+			panelGenLoadKey.tf_file_path.setText("");
+			loadAsymmetricAlgorithms();
+			isSelectBasic = false;
+			isSelectModern = false;
+			isSelectAsymmetric = true;
+			isSelectBouncyCastle = false;
+		} else if (!isSelectBouncyCastle && panelSelectAlgorithms.rdb_modern_symmetric_bouncy_castle.isSelected()) {
+			panelGenLoadKey.tf_file_path.setText("");
+			loadBouncyCastleSymmetricAlgorithms();
+			isSelectBasic = false;
+			isSelectModern = false;
+			isSelectAsymmetric = false;
+			isSelectBouncyCastle = true;
+		}
 	}
 
 	private void resetUIForAlgorithm() {
 		panelGenLoadKey.tf_file_path.setText("");
-		if (this.panelEnDe.rdo_text.isSelected()) {
-			this.panelGenLoadKey.lbl_fileKey.setVisible(false);
-			this.panelGenLoadKey.btn_open_file.setVisible(false);
-			this.panelGenLoadKey.tf_file_path.setVisible(false);
-			this.panelEnDe.btn_open_input_file.setVisible(false);
-			this.panelEnDe.btn_open_input_folder.setVisible(false);
-			this.panelEnDe.btn_open_output_file.setVisible(false);
-		} else if (ICryptoAlgorithm.isFileEncryption(this.model.algorithmType)) {
-			this.panelGenLoadKey.lbl_fileKey.setVisible(true);
-			this.panelGenLoadKey.btn_open_file.setVisible(true);
-			this.panelGenLoadKey.tf_file_path.setVisible(true);
-
+		if (ICryptoAlgorithm.isFileEncryption(this.model.algorithmType)) {
+			System.out.println("filee: " + model.algorithmType);
 			this.panelEnDe.rdo_file.setVisible(true);
 			this.panelEnDe.rdo_file.setSelected(true);
 			this.panelEnDe.btn_open_input_file.setVisible(true);
@@ -629,9 +626,7 @@ public class Controller implements ActionListener {
 			this.panelEnDe.tf_input.setText("");
 			this.panelEnDe.tf_output.setText("");
 		} else {
-			this.panelGenLoadKey.lbl_fileKey.setVisible(false);
-			this.panelGenLoadKey.btn_open_file.setVisible(false);
-			this.panelGenLoadKey.tf_file_path.setVisible(false);
+			System.out.println("text: " + model.algorithmType);
 			this.panelEnDe.btn_open_input_file.setVisible(false);
 			this.panelEnDe.btn_open_input_folder.setVisible(false);
 			this.panelEnDe.btn_open_output_file.setVisible(false);
@@ -704,6 +699,7 @@ public class Controller implements ActionListener {
 						byte[] out = this.model.algorithm.encrypt(input);
 						this.panelEnDe.tf_output.setText(Base64.getEncoder().encodeToString(out));
 					} catch (Exception e1) {
+						this.panelEnDe.tf_output.setText("");
 						e1.printStackTrace();
 						JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
 								"Failure Notification", JOptionPane.ERROR_MESSAGE);
@@ -772,6 +768,7 @@ public class Controller implements ActionListener {
 						String out = this.model.algorithm.decrypt(Base64.getDecoder().decode(input));
 						this.panelEnDe.tf_output.setText(out);
 					} catch (Exception e1) {
+						this.panelEnDe.tf_output.setText("");
 						e1.printStackTrace();
 						JOptionPane.showMessageDialog(panelEnDe, "An error occurred! Please try again.",
 								"Failure Notification", JOptionPane.ERROR_MESSAGE);
@@ -823,6 +820,10 @@ public class Controller implements ActionListener {
 				this.panelGenLoadKey.cbb_key_size.addItem(ks.getBits());
 			}
 		}
+
+		if (model.algorithmType.isStreamCipher()) {
+			progressBar.setVisible(false);
+		}
 	}
 
 	private void loadModes(List<EModes> modes) {
@@ -831,6 +832,8 @@ public class Controller implements ActionListener {
 		for (EModes mode : modes) {
 			this.panelGenLoadKey.cbb_modes.addItem(mode.getModeName());
 		}
+
+		progressBar.setVisible(false);
 	}
 
 	private void loadPaddings(List<EPadding> paddings) {

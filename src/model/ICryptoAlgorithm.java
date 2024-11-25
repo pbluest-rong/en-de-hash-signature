@@ -67,48 +67,47 @@ public interface ICryptoAlgorithm {
 	}
 
 	public static boolean isBasicSymmetric(EAlgorithmType type) {
-		if (type.getAlgorithm().equals("Shift Cipher") || type.getAlgorithm().equals("Substitution Cipher")
-				|| type.getAlgorithm().equals("Affine") || type.getAlgorithm().equals("Vigenere Cipher")
-				|| type.getAlgorithm().equals("Hill Cipher") || type.getAlgorithm().equals("Permutation Cipher"))
+		if (type == EAlgorithmType.Shift_Cipher || type == EAlgorithmType.Substitution_Cipher
+				|| type == EAlgorithmType.Affine_Cipher || type == EAlgorithmType.Vigenere_Cipher
+				|| type == EAlgorithmType.Hill_Cipher || type == EAlgorithmType.Permutation_Cipher)
 			return true;
 		return false;
 	}
 
 	public static boolean isBouncyCastleSymmetric(EAlgorithmType type) {
-		if (type.getAlgorithm().equals("Twofish") || type.getAlgorithm().equals("Serpent")
-				|| type.getAlgorithm().equals("CAST") || type.getAlgorithm().equals("Camellia"))
+		if (type == EAlgorithmType.Twofish || type == EAlgorithmType.Serpent || type == EAlgorithmType.CAST
+				|| type == EAlgorithmType.Camellia)
 			return true;
 		return false;
 	}
 
 	public static boolean isModernSymmetric(EAlgorithmType type) {
-		if (type.getAlgorithm().equals("AES") || type.getAlgorithm().equals("DES")
-				|| type.getAlgorithm().equals("DESede") || type.getAlgorithm().equals("Blowfish")
-				|| type.getAlgorithm().equals("RC4") || type.getAlgorithm().equals("ChaCha20"))
+		if (type == EAlgorithmType.AES || type == EAlgorithmType.DES || type == EAlgorithmType.TripleDES
+				|| type == EAlgorithmType.Blowfish || type == EAlgorithmType.RC4 || type == EAlgorithmType.ChaCha20)
 			return true;
 		return false;
 	}
 
 	public static boolean isAsymmetricRSA(EAlgorithmType type) {
-		if (type.getAlgorithm().equals("RSA"))
+		if (type == EAlgorithmType.RSA)
 			return true;
 		return false;
 	}
 
 	public static boolean isAsymmetricRSA_AES(EAlgorithmType type) {
-		if (type.getAlgorithm().equals("RSA_AES"))
+		if (type == EAlgorithmType.RSA_AES)
 			return true;
 		return false;
 	}
 
 	public static boolean isSymmetricChaCha(EAlgorithmType type) {
-		if (type.getAlgorithm().equals("ChaCha20"))
+		if (type == EAlgorithmType.ChaCha20)
 			return true;
 		return false;
 	}
 
 	public static boolean isFileEncryption(EAlgorithmType type) {
-		if (type == EAlgorithmType.RSA)
+		if (type == null || type == EAlgorithmType.RSA)
 			return false;
 		return true;
 	}

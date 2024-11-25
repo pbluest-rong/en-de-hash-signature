@@ -47,7 +47,6 @@ public enum EPadding {
 				paddings.add(EPadding.NoPadding);
 			} else if (mode == EModes.ECB || mode == EModes.CBC || mode == EModes.CFB || mode == EModes.OFB) {
 				paddings.add(EPadding.PKCS5Padding);
-				paddings.add(EPadding.NoPadding);
 			}
 			break;
 		case Twofish:
@@ -70,5 +69,7 @@ public enum EPadding {
 		}
 		return paddings;
 	}
-
+	public static void main(String[] args) {
+		System.out.println(getSupportedPadding(EAlgorithmType.RC4, null));
+	}
 }

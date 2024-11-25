@@ -8,8 +8,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 
 public class PanelSignature extends JPanel {
 	private DS ds;
@@ -105,8 +103,8 @@ public class PanelSignature extends JPanel {
 							String sign = ds.sign(message);
 							outputArea.setText(sign);
 						} else {
-							JOptionPane.showMessageDialog(null, "Message is empty!", "INFORMATION MESSAGE",
-									JOptionPane.INFORMATION_MESSAGE);
+							JOptionPane.showMessageDialog(PanelSignature.this, "Message is empty!",
+									"Information Message", JOptionPane.INFORMATION_MESSAGE);
 						}
 					} else if (signFileRadioButton.isSelected()) {
 						String filePath = filePathField.getText();
@@ -114,12 +112,12 @@ public class PanelSignature extends JPanel {
 							String sign = ds.signFile(filePath);
 							outputArea.setText(sign);
 						} else {
-							JOptionPane.showMessageDialog(null, "File path is empty!!", "INFORMATION MESSAGE",
-									JOptionPane.INFORMATION_MESSAGE);
+							JOptionPane.showMessageDialog(PanelSignature.this, "File path is empty!!",
+									"Information Message", JOptionPane.INFORMATION_MESSAGE);
 						}
 					}
 				} catch (Exception ex) {
-					JOptionPane.showMessageDialog(null, "Error signing: " + ex.getMessage(), "ERROR",
+					JOptionPane.showMessageDialog(PanelSignature.this, "Error signing", "Error",
 							JOptionPane.ERROR_MESSAGE);
 				}
 			}
@@ -132,27 +130,28 @@ public class PanelSignature extends JPanel {
 					if (signMessageRadioButton.isSelected()) {
 						String sign = outputArea.getText();
 						if (sign != null && !sign.isEmpty()) {
-							String messageToVerify = JOptionPane.showInputDialog(null, "Enter signature to verify:",
-									"Verify Signature", JOptionPane.PLAIN_MESSAGE);
+							String messageToVerify = JOptionPane.showInputDialog(PanelSignature.this,
+									"Enter signature to verify:", "Verify Signature", JOptionPane.PLAIN_MESSAGE);
 							if (messageToVerify != null && !sign.isEmpty()) {
 								System.out.println(messageToVerify);
 								System.out.println(sign);
 								boolean isVerified = ds.verify(messageToVerify, sign);
-								JOptionPane.showMessageDialog(null, isVerified ? "Valid" : "Invalid",
+								JOptionPane.showMessageDialog(PanelSignature.this, isVerified ? "Valid" : "Invalid",
 										"Verification result", JOptionPane.INFORMATION_MESSAGE);
 							} else {
-								JOptionPane.showMessageDialog(null, "No signature entered for verification!!",
-										"INFORMATION MESSAGE", JOptionPane.INFORMATION_MESSAGE);
+								JOptionPane.showMessageDialog(PanelSignature.this,
+										"No signature entered for verification!!", "Information Message",
+										JOptionPane.INFORMATION_MESSAGE);
 							}
 						} else {
-							JOptionPane.showMessageDialog(null, "No message entered for verification.!!",
-									"INFORMATION MESSAGE", JOptionPane.INFORMATION_MESSAGE);
+							JOptionPane.showMessageDialog(PanelSignature.this, "No message entered for verification.!!",
+									"Information Message", JOptionPane.INFORMATION_MESSAGE);
 						}
 					} else if (signFileRadioButton.isSelected()) {
 						// Mở cửa sổ chọn file
 						JFileChooser fileChooser = new JFileChooser();
 						fileChooser.setCurrentDirectory(new File("./resources"));
-						int result = fileChooser.showOpenDialog(null);
+						int result = fileChooser.showOpenDialog(PanelSignature.this);
 						if (result == JFileChooser.APPROVE_OPTION) {
 							String filePath = fileChooser.getSelectedFile().getAbsolutePath(); // Lấy đường dẫn tệp
 
@@ -160,21 +159,19 @@ public class PanelSignature extends JPanel {
 							String sign = outputArea.getText();
 							if (sign != null && !sign.isEmpty()) {
 								boolean isVerified = ds.verifyFile(filePath, sign);
-								JOptionPane.showMessageDialog(null, isVerified ? "Valid" : "Invalid",
+								JOptionPane.showMessageDialog(PanelSignature.this, isVerified ? "Valid" : "Invalid",
 										"File Verification result", JOptionPane.INFORMATION_MESSAGE);
 							} else {
-								JOptionPane.showMessageDialog(null, "No signature entered for verification.",
-										"INFORMATION MESSAGE", JOptionPane.INFORMATION_MESSAGE);
+								JOptionPane.showMessageDialog(PanelSignature.this,
+										"No signature entered for verification.", "Information Message",
+										JOptionPane.INFORMATION_MESSAGE);
 							}
-						} else {
-							JOptionPane.showMessageDialog(null, "No file selected for verification.",
-									"INFORMATION MESSAGE", JOptionPane.INFORMATION_MESSAGE);
 						}
 					}
 
 				} catch (Exception ex) {
 					ex.printStackTrace();
-					JOptionPane.showMessageDialog(null, "Error verifying: " + ex.getMessage(), "ERROR",
+					JOptionPane.showMessageDialog(PanelSignature.this, "Error verifying", "Error",
 							JOptionPane.ERROR_MESSAGE);
 				}
 			}
@@ -186,22 +183,19 @@ public class PanelSignature extends JPanel {
 				try {
 					JFileChooser fileChooser = new JFileChooser();
 					fileChooser.setCurrentDirectory(new File("./resources"));
-					int result = fileChooser.showOpenDialog(null);
+					int result = fileChooser.showOpenDialog(PanelSignature.this);
 					if (result == JFileChooser.APPROVE_OPTION) {
 						File selectedFile = fileChooser.getSelectedFile();
 						KeyPairContainer keyPair = KeyPairContainer
 								.loadKeyPairAndSignature(selectedFile.getAbsolutePath());
 						ds = new DS("DSA", "SUN", keyPair.getPublicKey(), keyPair.getPrivateKey());
 						outputArea.setText(keyPair.getSignature());
-						JOptionPane.showMessageDialog(null, "Keys loaded successfully", "INFORMATION MESSAGE",
-								JOptionPane.INFORMATION_MESSAGE);
-					} else {
-						JOptionPane.showMessageDialog(null, "No file selected for loading keys!", "INFORMATION MESSAGE",
-								JOptionPane.INFORMATION_MESSAGE);
+						JOptionPane.showMessageDialog(PanelSignature.this, "Signature result loaded successfully",
+								"Information Message", JOptionPane.INFORMATION_MESSAGE);
 					}
 				} catch (Exception ex) {
-					JOptionPane.showMessageDialog(null, "Error loading keys: " + ex.getMessage(), "ERROR",
-							JOptionPane.ERROR);
+					JOptionPane.showMessageDialog(PanelSignature.this, "Error loading signature result", "Error",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -214,23 +208,20 @@ public class PanelSignature extends JPanel {
 					try {
 						JFileChooser fileChooser = new JFileChooser();
 						fileChooser.setCurrentDirectory(new File("./resources"));
-						int result = fileChooser.showSaveDialog(null);
+						int result = fileChooser.showSaveDialog(PanelSignature.this);
 						if (result == JFileChooser.APPROVE_OPTION) {
 							File selectedFile = fileChooser.getSelectedFile();
 							KeyPairContainer.saveKeyPairAndSignature(selectedFile.getAbsolutePath(), ds.publicKey,
 									ds.privateKey, signature);
-							JOptionPane.showMessageDialog(null, "Keys saved successfully", "INFORMATION MESSAGE",
-									JOptionPane.INFORMATION_MESSAGE);
-						} else {
-							JOptionPane.showMessageDialog(null, "No file selected for saving keys!",
-									"INFORMATION MESSAGE", JOptionPane.INFORMATION_MESSAGE);
+							JOptionPane.showMessageDialog(PanelSignature.this, "Signature result saved successfully",
+									"Information Message", JOptionPane.INFORMATION_MESSAGE);
 						}
 					} catch (Exception ex) {
-						JOptionPane.showMessageDialog(null, "Error saving keys: " + ex.getMessage(), "ERROR",
-								JOptionPane.ERROR);
+						JOptionPane.showMessageDialog(PanelSignature.this, "Error saving signature result", "Error",
+								JOptionPane.ERROR_MESSAGE);
 					}
 				} else {
-					JOptionPane.showMessageDialog(null, "Signature is empty!", "INFORMATION MESSAGE",
+					JOptionPane.showMessageDialog(PanelSignature.this, "Signature is empty!", "Information Message",
 							JOptionPane.INFORMATION_MESSAGE);
 				}
 			}
@@ -241,7 +232,7 @@ public class PanelSignature extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setCurrentDirectory(new File("./resources"));
-				int result = fileChooser.showOpenDialog(null);
+				int result = fileChooser.showOpenDialog(PanelSignature.this);
 				if (result == JFileChooser.APPROVE_OPTION) {
 					filePathField.setText(fileChooser.getSelectedFile().getAbsolutePath());
 				}

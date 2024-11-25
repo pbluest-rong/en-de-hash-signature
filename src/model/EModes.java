@@ -39,7 +39,7 @@ public enum EModes {
 			return Arrays.asList(ECB, CBC, CFB, OFB);
 		case RC4:
 		case ChaCha20:
-			return Arrays.asList(ECB, CTR);
+			return Arrays.asList();
 		case RSA:
 		case RSA_AES:
 			return Arrays.asList(ECB);

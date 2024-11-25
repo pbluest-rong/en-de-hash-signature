@@ -89,12 +89,6 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 			System.arraycopy(encryptedData, 0, result, ivBytes.length, encryptedData.length);
 			return result;
 		} else {
-			if (padding == EPadding.NoPadding && data.length % cipher.getBlockSize() != 0) {
-				int blockSize = cipher.getBlockSize();
-				int paddingRequired = blockSize - (data.length % blockSize);
-				byte[] paddedData = Arrays.copyOf(data, data.length + paddingRequired);
-				data = paddedData;
-			}
 			if (EAlgorithmType.requiresIV(mode, algorithmType)) {
 				if (iv == null && algorithmType.getIvLength() != null) {
 					iv = ICryptoAlgorithm.generateIV(algorithmType.getIvLength());
@@ -132,14 +126,6 @@ public class ModernSymmetricEncryption implements ICryptoAlgorithm {
 			}
 
 			byte[] decryptedData = cipher.doFinal(data);
-			// Nếu là NoPadding, loại bỏ padding thủ công
-			if (padding == EPadding.NoPadding) {
-				int originalLength = decryptedData.length;
-				while (originalLength > 0 && decryptedData[originalLength - 1] == 0) {
-					originalLength--;
-				}
-				decryptedData = Arrays.copyOf(decryptedData, originalLength);
-			}
 
 			return new String(decryptedData, StandardCharsets.UTF_8);
 		}

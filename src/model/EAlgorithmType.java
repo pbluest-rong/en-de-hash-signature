@@ -90,4 +90,8 @@ public enum EAlgorithmType {
 		}
 	}
 
+	public boolean isStreamCipher() {
+		return this == EAlgorithmType.RC4 || this == EAlgorithmType.ChaCha20;
+	}
+
 }
