@@ -1,4 +1,4 @@
-# ĐÔ ÁN GIỮA KỲ ATBMHTTT: Ứng dụng mã hóa và giải mã, băm và chữ ký điện tử
+# Ứng dụng mã hóa và giải mã, băm và chữ ký điện tử
 ## 1. Mã hóa đối xứng cơ bản (Basic Symmetric Encryption)
 >
 - Shift Cipher
